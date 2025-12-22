@@ -11,7 +11,7 @@ namespace Computer_Science_IA___Uniform_Manager
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new UniformManager());
+            Application.Run(new LoginForm());
         }
     }
 }
