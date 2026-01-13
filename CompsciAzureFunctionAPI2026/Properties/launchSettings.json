@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "CompsciAzureFunctionAPI2026": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7109",
+      "launchBrowser": false
+    }
+  }
+}

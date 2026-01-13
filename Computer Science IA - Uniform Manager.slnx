@@ -1,3 +1,8 @@
 <Solution>
+  <Project Path="CompsciAzureFunctionAPI2026/CompsciAzureFunctionAPI2026.csproj" Id="96b2a3d3-e524-482a-8071-9fa451025ad5" />
+  <Project Path="CompsciIADatabase2026/CompsciIADatabase2026.sqlproj" Id="ee81a0b5-5243-4468-8d7d-ffccfee73e26">
+    <Build />
+    <Deploy />
+  </Project>
   <Project Path="Computer Science IA - Uniform Manager/Computer Science IA - Uniform Manager.csproj" />
 </Solution>
