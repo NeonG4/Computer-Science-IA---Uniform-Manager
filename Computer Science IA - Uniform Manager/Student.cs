@@ -1,45 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Computer_Science_IA___Uniform_Manager
 {
+    /// <summary>
+    /// Represents a student in the uniform management system
+    /// </summary>
     public class Student
     {
-        private string fName;
-        private string lName;
-        private string studentID;
-        private int grade;
-        private List<Uniform> uniforms;
-        public Student(string fName, string lName, string studentID, int grade)
+        public string FirstName { get; }
+        public string LastName { get; }
+        public string StudentID { get; }
+        public int Grade { get; }
+        private readonly List<Uniform> uniforms;
+
+        public Student(string firstName, string lastName, string studentID, int grade)
         {
-            this.fName = fName;
-            this.lName = lName;
-            this.studentID = studentID;
-            this.grade = grade;
-            this.uniforms = new List<Uniform>();
+            FirstName = firstName;
+            LastName = lastName;
+            StudentID = studentID;
+            Grade = grade;
+            uniforms = new List<Uniform>();
         }
-        public string GetFirstName()
+
+        public string FullName => $"{FirstName} {LastName}";
+
+        public Uniform[] GetUniforms() => uniforms.ToArray();
+
+        public void AssignUniform(Uniform uniform)
         {
-            return fName;
+            if (!uniforms.Contains(uniform))
+            {
+                uniforms.Add(uniform);
+            }
         }
-        public string GetLastName()
+
+        public void RemoveUniform(Uniform uniform)
         {
-            return lName;
-        }
-        public string GetStudentID()
-        {
-            return studentID;
-        }
-        public int GetGrade()
-        {
-            return grade;
-        }
-        public Uniform[] GetUniforms()
-        {
-            return uniforms.ToArray();
+            uniforms.Remove(uniform);
         }
     }
 }

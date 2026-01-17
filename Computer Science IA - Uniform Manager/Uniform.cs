@@ -1,105 +1,117 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Computer_Science_IA___Uniform_Manager
 {
+    /// <summary>
+    /// Represents a uniform item in the inventory
+    /// </summary>
     public class Uniform
     {
-        private UniformClothing uniform;
-        private Student? student;
-        private string ID;
-        private List<Condition> problems;
-        private int size;
-        private bool isCheckedOut = false;
-        public Uniform(string ID, int number, UniformClothing uniform, int size)
+        public string ID { get; }
+        public UniformClothing Type { get; }
+        public int Size { get; }
+        public bool IsCheckedOut { get; private set; }
+        public Student? AssignedStudent { get; private set; }
+        
+        private readonly List<Condition> conditions;
+
+        public Uniform(string id, UniformClothing uniformType, int size)
         {
-            this.ID = ID;
-            this.uniform = uniform;
-            this.size = size;
-            this.problems = new List<Condition>();
-            this.student = null;
+            ID = id;
+            Type = uniformType;
+            Size = size;
+            conditions = new List<Condition>();
+            AssignedStudent = null;
+            IsCheckedOut = false;
         }
-        public void CheckOutUniform() 
+
+        /// <summary>
+        /// Checks out the uniform to the assigned student
+        /// </summary>
+        public void CheckOut()
         {
-            if (student == null)
+            if (AssignedStudent == null)
             {
                 return;
             }
-            isCheckedOut = true;
+            IsCheckedOut = true;
         }
-        public void CheckInUniform() 
+
+        /// <summary>
+        /// Checks in the uniform from the assigned student
+        /// </summary>
+        public void CheckIn()
         {
-            if (student == null)
+            if (AssignedStudent == null)
             {
                 return;
             }
-            isCheckedOut = false;
-        }   
-        public void AssignUniform(Student student)
+            IsCheckedOut = false;
+        }
+
+        /// <summary>
+        /// Assigns this uniform to a student
+        /// </summary>
+        public void AssignToStudent(Student student)
         {
-            if (this.student != null)
+            if (AssignedStudent != null)
             {
                 return;
             }
-            this.student = student;
+            AssignedStudent = student;
+            student.AssignUniform(this);
         }
-        public void UnassignUniform()
+
+        /// <summary>
+        /// Unassigns this uniform from the current student
+        /// </summary>
+        public void UnassignFromStudent()
         {
-            this.student = null;
+            if (AssignedStudent != null)
+            {
+                AssignedStudent.RemoveUniform(this);
+                AssignedStudent = null;
+            }
+            IsCheckedOut = false;
         }
-        public Student? GetStudentAssignment()
-        {
-            return student;
-        }
-        public UniformClothing GetUniformType()
-        {
-            return uniform;
-        }
-        public string GetID()
-        {
-            return ID;
-        }
-        public int GetSize()
-        {
-            return size;
-        }
-        public bool IsCheckedOut()
-        {
-            return isCheckedOut;
-        }
+
         public void AddCondition(Condition condition)
         {
-            if (problems.Contains(condition))
+            if (!conditions.Contains(condition))
             {
-                return;
+                conditions.Add(condition);
             }
-            problems.Add(condition);
         }
+
         public void RemoveCondition(Condition condition)
         {
-            if (!problems.Contains(condition))
-            {
-                return;
-            }
-            problems.Remove(condition);
+            conditions.Remove(condition);
         }
-        public Condition[] GetConditions()
-        {
-            return problems.ToArray();
-        }
+
+        public Condition[] GetConditions() => conditions.ToArray();
+
+        public bool HasCondition(Condition condition) => conditions.Contains(condition);
+
+        public bool IsInGoodCondition => conditions.Count == 0;
     }
+
+    /// <summary>
+    /// Represents the condition/problem with a uniform item
+    /// </summary>
     public enum Condition
     {
         Stain,
         BrokenButton,
         BrokenZipper,
-        Torn
+        Torn,
+        Missing,
+        Faded
     }
+
+    /// <summary>
+    /// Types of uniform clothing items
+    /// </summary>
     public enum UniformClothing
     {
         ConcertCoat,
@@ -110,5 +122,4 @@ namespace Computer_Science_IA___Uniform_Manager
         MarchingSocks,
         Pants
     }
-
 }

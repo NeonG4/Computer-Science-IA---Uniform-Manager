@@ -10,12 +10,15 @@ using CompsciAzureFunctionAPI2026.Services;
 
 namespace CompsciAzureFunctionAPI2026
 {
-    public class Function1
+    /// <summary>
+    /// Azure Function for creating new user accounts
+    /// </summary>
+    public class CreateAccountFunction
     {
-        private readonly ILogger<Function1> _logger;
+        private readonly ILogger<CreateAccountFunction> _logger;
         private readonly IConfiguration _configuration;
 
-        public Function1(ILogger<Function1> logger, IConfiguration configuration)
+        public CreateAccountFunction(ILogger<CreateAccountFunction> logger, IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
@@ -121,7 +124,7 @@ namespace CompsciAzureFunctionAPI2026
                 insertCmd.Parameters.AddWithValue("@LastName", accountRequest.LastName);
                 insertCmd.Parameters.AddWithValue("@Email", accountRequest.Email);
                 insertCmd.Parameters.AddWithValue("@HashedPassword", hashedPassword);
-                insertCmd.Parameters.AddWithValue("@AccountLevel", 2); // Default to level 2 (User)
+                insertCmd.Parameters.AddWithValue("@AccountLevel", 2); // Default to level 2 (Viewer)
                 insertCmd.Parameters.AddWithValue("@Username", accountRequest.Username);
 
                 int newUserId = (int)(await insertCmd.ExecuteScalarAsync() ?? 0);

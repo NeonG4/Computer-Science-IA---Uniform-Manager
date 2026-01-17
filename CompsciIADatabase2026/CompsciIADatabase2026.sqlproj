@@ -59,5 +59,12 @@
   </ItemGroup>
   <ItemGroup>
     <Build Include="Usertable.sql" />
+    <Build Include="UserInfo.sql" />
+    <Build Include="Migration_AddAccountLevel.sql" />
+    <Build Include="AccountLevels.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README_AccountLevels.md" />
+    <None Include="ApplyMigration.ps1" />
   </ItemGroup>
 </Project>
