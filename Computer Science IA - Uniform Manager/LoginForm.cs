@@ -1,109 +1,168 @@
-﻿using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+﻿using System;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Security.Cryptography;
 
 namespace Computer_Science_IA___Uniform_Manager
 {
     public partial class LoginForm : Form
     {
-        private SqlConnection cn;
-        private SqlCommand cmd;
-        private SqlDataReader dr;
+        private static readonly HttpClient httpClient = new HttpClient();
+        private const string API_BASE_URL = "http://localhost:7109/api";
         private HashAlgorithm sha256 = SHA256.Create();
+
         public LoginForm()
         {
             InitializeComponent();
-            cn = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=""C:\Users\faken\source\repos\Computer Science IA - Uniform Manager\Computer Science IA - Uniform Manager\DatabasestorageIA.mdf"";Integrated Security=True");
-            cn.Open();
         }
 
-        private void buttonLogin_Click(object sender, EventArgs e)
+        private async void buttonLogin_Click(object sender, EventArgs e)
         {
-            if (textBoxPassword.Text != string.Empty || textBoxUsername.Text != string.Empty)
+            if (string.IsNullOrEmpty(textBoxPassword.Text) || string.IsNullOrEmpty(textBoxUsername.Text))
             {
-                cmd = new SqlCommand("select * from UserInfo where Username='" + textBoxUsername.Text + "' and Hashedpassword='" + Encoding.ASCII.GetString(sha256.ComputeHash(Encoding.ASCII.GetBytes(textBoxPassword.Text))) + "'", cn);
-                dr = cmd.ExecuteReader();
-                if (dr.Read())
+                MessageBox.Show("Please enter value in all field.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var loginRequest = new
                 {
-                    dr.Close();
+                    Username = textBoxUsername.Text,
+                    Password = textBoxPassword.Text
+                };
+
+                var jsonContent = JsonSerializer.Serialize(loginRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/Login", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonSerializer.Deserialize<LoginResponse>(responseBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result != null && result.Success)
+                {
                     this.Hide();
                     UniformManager home = new UniformManager();
                     home.ShowDialog();
                 }
                 else
                 {
-                    dr.Close();
-                    MessageBox.Show("No Account avilable with this username and password ", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(result?.Message ?? "No Account available with this username and password", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-
             }
-            else
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show("Please enter value in all field.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Network error: {ex.Message}\nMake sure the Azure Function is running.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Login error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        private void buttonCreate_Click(object sender, EventArgs e)
+
+        private async void buttonCreate_Click(object sender, EventArgs e)
         {
-            // checks if the user has entered all fields 
-            if (textBoxConfirmPasswordCreate.Text != string.Empty || textBoxPasswordCreate.Text != string.Empty || textBoxUsernameCreate.Text != string.Empty)
+            if (string.IsNullOrEmpty(textBoxConfirmPasswordCreate.Text) || 
+                string.IsNullOrEmpty(textBoxPasswordCreate.Text) || 
+                string.IsNullOrEmpty(textBoxUsernameCreate.Text) ||
+                string.IsNullOrEmpty(textBoxFirstNameCreate.Text) ||
+                string.IsNullOrEmpty(textBoxLastNameCreate.Text) ||
+                string.IsNullOrEmpty(textBoxEmailCreate.Text))
             {
-                // checks if both password are same
-                if (textBoxConfirmPasswordCreate.Text == textBoxPasswordCreate.Text)
+                MessageBox.Show("Please enter value in all field.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (textBoxConfirmPasswordCreate.Text != textBoxPasswordCreate.Text)
+            {
+                MessageBox.Show("Please enter both password same", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (textBoxPasswordCreate.Text.Length < 12)
+            {
+                MessageBox.Show("Password must be at least 12 characters long.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var accountRequest = new
                 {
-                    if (textBoxPasswordCreate.Text.Length < 12)
-                    {
-                        MessageBox.Show("Password must be at least 12 characters long.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    Random rand = new Random();
-                    int id = rand.Next();
-                    cmd = new SqlCommand("select * from UserInfo where UserId='" + id + "'", cn);
-                    dr = cmd.ExecuteReader();
-                    if (dr.Read())
-                    {
-                        dr.Close();
-                        MessageBox.Show("Username Already exist please try another ", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                    else
-                    {
-                        dr.Close();
-                        cmd = new SqlCommand(
-                            "INSERT INTO UserInfo (FirstName, LastName, Email, HashedPassword, AccountLevel, Username) " +
-                            "VALUES (@FirstName, @LastName, @Email, @HashedPassword, @AccountLevel, @Username)",
-                            cn
-                        );
+                    FirstName = textBoxFirstNameCreate.Text,
+                    LastName = textBoxLastNameCreate.Text,
+                    Email = textBoxEmailCreate.Text,
+                    Password = textBoxPasswordCreate.Text,
+                    Username = textBoxUsernameCreate.Text
+                };
 
-                        cmd.Parameters.AddWithValue("FirstName", textBoxFirstNameCreate.Text);
-                        cmd.Parameters.AddWithValue("LastName", textBoxLastNameCreate.Text);
-                        cmd.Parameters.AddWithValue("Email", textBoxEmailCreate.Text);
-                        cmd.Parameters.AddWithValue("HashedPassword", Encoding.ASCII.GetString(sha256.ComputeHash(Encoding.ASCII.GetBytes(textBoxPasswordCreate.Text))));
-                        cmd.Parameters.AddWithValue("AccountLevel", 2);
-                        cmd.Parameters.AddWithValue("Username", textBoxUsernameCreate.Text);
-                        cmd.ExecuteNonQuery();
+                var jsonContent = JsonSerializer.Serialize(accountRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateAccount", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonSerializer.Deserialize<CreateAccountResponse>(responseBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
-                        cmd = new SqlCommand("SET IDENTITY_INSERT UserInfo OFF", cn);
-                        cmd.ExecuteNonQuery();
-                        MessageBox.Show("Your Account is created . Please login now.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                if (result != null && result.Success)
+                {
+                    MessageBox.Show("Your Account is created. Please login now.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
+                    // Clear form fields
+                    textBoxFirstNameCreate.Clear();
+                    textBoxLastNameCreate.Clear();
+                    textBoxEmailCreate.Clear();
+                    textBoxUsernameCreate.Clear();
+                    textBoxPasswordCreate.Clear();
+                    textBoxConfirmPasswordCreate.Clear();
                 }
                 else
                 {
-                    MessageBox.Show("Please enter both password same ", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(result?.Message ?? "Failed to create account.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            else
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show("Please enter value in all field.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Network error: {ex.Message}\nMake sure the Azure Function is running.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error creating account: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+    }
+
+    public class LoginResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public UserInfo? User { get; set; }
+    }
+
+    public class UserInfo
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public int AccountLevel { get; set; }
+    }
+
+    public class CreateAccountResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int? UserId { get; set; }
     }
 }

@@ -48,7 +48,8 @@ namespace CompsciAzureFunctionAPI2026
                 if (string.IsNullOrWhiteSpace(accountRequest.FirstName) ||
                     string.IsNullOrWhiteSpace(accountRequest.LastName) ||
                     string.IsNullOrWhiteSpace(accountRequest.Email) ||
-                    string.IsNullOrWhiteSpace(accountRequest.Password))
+                    string.IsNullOrWhiteSpace(accountRequest.Password) ||
+                    string.IsNullOrWhiteSpace(accountRequest.Username))
                 {
                     return new BadRequestObjectResult(new CreateAccountResponse
                     {
@@ -91,51 +92,48 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Check if email already exists
+                // Check if email or username already exists
                 await using var checkCmd = new SqlCommand(
-                    "SELECT COUNT(*) FROM [dbo].[Usertable] WHERE [Email] = @Email",
+                    "SELECT COUNT(*) FROM [dbo].[UserInfo] WHERE [Email] = @Email OR [Username] = @Username",
                     connection);
                 checkCmd.Parameters.AddWithValue("@Email", accountRequest.Email);
+                checkCmd.Parameters.AddWithValue("@Username", accountRequest.Username);
 
-                int emailCount = (int)await checkCmd.ExecuteScalarAsync();
-                if (emailCount > 0)
+                int existingCount = (int)(await checkCmd.ExecuteScalarAsync() ?? 0);
+                if (existingCount > 0)
                 {
                     return new ConflictObjectResult(new CreateAccountResponse
                     {
                         Success = false,
-                        Message = "An account with this email already exists."
+                        Message = "An account with this email or username already exists."
                     });
                 }
 
-                // Get next available ID
-                await using var getIdCmd = new SqlCommand(
-                    "SELECT ISNULL(MAX([Id]), 0) + 1 FROM [dbo].[Usertable]",
-                    connection);
-                int newId = (int)await getIdCmd.ExecuteScalarAsync();
-
-                // Insert new user
+                // Insert new user (UserId is IDENTITY, so it auto-increments)
                 await using var insertCmd = new SqlCommand(
-                    @"INSERT INTO [dbo].[Usertable] 
-                      ([Id], [FirstName], [LastName], [Email], [HashedPassword]) 
-                      VALUES (@Id, @FirstName, @LastName, @Email, @HashedPassword)",
+                    @"INSERT INTO [dbo].[UserInfo] 
+                      ([FirstName], [LastName], [Email], [HashedPassword], [AccountLevel], [Username]) 
+                      VALUES (@FirstName, @LastName, @Email, @HashedPassword, @AccountLevel, @Username);
+                      SELECT CAST(SCOPE_IDENTITY() AS INT);",
                     connection);
 
-                insertCmd.Parameters.AddWithValue("@Id", newId);
-                insertCmd.Parameters.AddWithValue("@FirstName", accountRequest.FirstName.PadRight(10).Substring(0, 10));
-                insertCmd.Parameters.AddWithValue("@LastName", accountRequest.LastName.PadRight(10).Substring(0, 10));
-                insertCmd.Parameters.AddWithValue("@Email", accountRequest.Email.PadRight(50).Substring(0, 50));
-                insertCmd.Parameters.AddWithValue("@HashedPassword", hashedPassword.PadRight(255).Substring(0, 255));
+                insertCmd.Parameters.AddWithValue("@FirstName", accountRequest.FirstName);
+                insertCmd.Parameters.AddWithValue("@LastName", accountRequest.LastName);
+                insertCmd.Parameters.AddWithValue("@Email", accountRequest.Email);
+                insertCmd.Parameters.AddWithValue("@HashedPassword", hashedPassword);
+                insertCmd.Parameters.AddWithValue("@AccountLevel", 2); // Default to level 2 (User)
+                insertCmd.Parameters.AddWithValue("@Username", accountRequest.Username);
 
-                int rowsAffected = await insertCmd.ExecuteNonQueryAsync();
+                int newUserId = (int)(await insertCmd.ExecuteScalarAsync() ?? 0);
 
-                if (rowsAffected > 0)
+                if (newUserId > 0)
                 {
                     _logger.LogInformation("Account created successfully for email: {Email}", accountRequest.Email);
                     return new OkObjectResult(new CreateAccountResponse
                     {
                         Success = true,
                         Message = "Account created successfully.",
-                        UserId = newId
+                        UserId = newUserId
                     });
                 }
                 else
