@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Computer_Science_IA___Uniform_Manager.Models;
 
 namespace Computer_Science_IA___Uniform_Manager
 {
@@ -49,8 +50,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 if (result != null && result.Success)
                 {
                     this.Hide();
-                    UniformManager home = new UniformManager();
+                    UniformManagerAdminHome home = new UniformManagerAdminHome(result.User!);
                     home.ShowDialog();
+                    this.Close();
                 }
                 else
                 {
@@ -140,29 +142,5 @@ namespace Computer_Science_IA___Uniform_Manager
                 MessageBox.Show($"Error creating account: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-    }
-
-    public class LoginResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public UserInfo? User { get; set; }
-    }
-
-    public class UserInfo
-    {
-        public int UserId { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public int AccountLevel { get; set; }
-    }
-
-    public class CreateAccountResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public int? UserId { get; set; }
     }
 }
