@@ -5,6 +5,7 @@ namespace CompsciAzureFunctionAPI2026.Models
     /// </summary>
     public class CreateUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int UniformType { get; set; } // UniformClothing enum value
         public int Size { get; set; }

@@ -5,6 +5,7 @@ namespace CompsciAzureFunctionAPI2026.Models
     /// </summary>
     public class CreateStudentRequest
     {
+        public int OrganizationId { get; set; }
         public string StudentIdentifier { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;

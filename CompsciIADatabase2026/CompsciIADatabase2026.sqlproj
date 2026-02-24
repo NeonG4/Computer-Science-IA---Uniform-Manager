@@ -65,12 +65,7 @@
     <None Include="RunSetup.ps1" />
     <None Include="SetupAzureDatabase.ps1" />
     <None Include="UpdateConnectionStrings.ps1" />
-    <None Include="PORTAL_SETUP_GUIDE.md" />
     <None Include="RunAzureSetup.ps1" />
-    <None Include="AZURE_MIGRATION.md" />
-    <None Include="README.md" />
-    <None Include="QUICKSTART_AZURE.md" />
     <None Include="MigrateToAzure.ps1" />
-    <None Include="MIGRATION_COMPLETE.md" />
   </ItemGroup>
 </Project>

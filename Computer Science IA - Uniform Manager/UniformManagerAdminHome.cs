@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -16,37 +17,39 @@ namespace Computer_Science_IA___Uniform_Manager
     public partial class UniformManagerAdminHome : Form
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string API_BASE_URL = "http://localhost:7109/api";
+        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
         private UserInfo? _currentUser;
+        private OrganizationDto? _currentOrganization;
 
         public UniformManagerAdminHome()
         {
             InitializeComponent();
         }
 
-        public UniformManagerAdminHome(UserInfo user) : this()
+        public UniformManagerAdminHome(UserInfo user, OrganizationDto organization) : this()
         {
             _currentUser = user;
+            _currentOrganization = organization;
         }
 
         private async void UniformManagerAdminHome_Load(object sender, EventArgs e)
         {
-            // If no user is set, this shouldn't happen - but handle gracefully
-            if (_currentUser == null)
+            // If no user or organization is set, this shouldn't happen - but handle gracefully
+            if (_currentUser == null || _currentOrganization == null)
             {
-                MessageBox.Show("No user information available. Please log in again.", "Error", 
+                MessageBox.Show("No user or organization information available. Please log in again.", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
                 return;
             }
 
-            // Update form title with user info
-            this.Text = $"Uniform Manager - {_currentUser.FirstName} {_currentUser.LastName} ({GetAccountLevelText(_currentUser.AccountLevel)})";
+            // Update form title with user info and organization
+            this.Text = $"Uniform Manager - {_currentOrganization.OrganizationName} - {_currentUser.FirstName} {_currentUser.LastName} ({GetAccountLevelText(_currentOrganization.UserAccountLevel)})";
 
             await LoadAllData();
         }
 
-        private string GetAccountLevelText(int accountLevel)
+        private string GetAccountLevelText(int? accountLevel)
         {
             return accountLevel switch
             {
@@ -65,9 +68,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 var uniformsTask = LoadUniformsAsync();
                 var studentsTask = LoadStudentsAsync();
                 
-                // Only load users if current user is an administrator
+                // Only load users if current user is an administrator in this organization
                 Task? usersTask = null;
-                if (_currentUser?.AccountLevel == 0)
+                if (_currentOrganization?.UserAccountLevel == 0)
                 {
                     usersTask = LoadUsersAsync();
                     await Task.WhenAll(uniformsTask, studentsTask, usersTask);
@@ -90,7 +93,8 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             try
             {
-                var response = await httpClient.GetAsync($"{API_BASE_URL}/GetUniforms?userId={_currentUser?.UserId}");
+                var response = await httpClient.GetAsync(
+                    $"{API_BASE_URL}/GetUniforms?userId={_currentUser?.UserId}&organizationId={_currentOrganization?.OrganizationId}");
                 response.EnsureSuccessStatusCode();
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var result = JsonSerializer.Deserialize<UniformListResponse>(jsonString, new JsonSerializerOptions
@@ -115,7 +119,8 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             try
             {
-                var response = await httpClient.GetAsync($"{API_BASE_URL}/GetStudents?userId={_currentUser?.UserId}");
+                var response = await httpClient.GetAsync(
+                    $"{API_BASE_URL}/GetStudents?userId={_currentUser?.UserId}&organizationId={_currentOrganization?.OrganizationId}");
                 response.EnsureSuccessStatusCode();
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var result = JsonSerializer.Deserialize<StudentListResponse>(jsonString, new JsonSerializerOptions
@@ -230,6 +235,21 @@ namespace Computer_Science_IA___Uniform_Manager
             if (dataGridViewUsers.Columns.Contains("AccountLevel"))
             {
                 dataGridViewUsers.Columns["AccountLevel"].HeaderText = "Access Level";
+            }
+        }
+
+        private async void SwitchOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var orgSelector = new OrganizationSelectorForm(_currentUser!);
+            if (orgSelector.ShowDialog() == DialogResult.OK && orgSelector.SelectedOrganization != null)
+            {
+                _currentOrganization = orgSelector.SelectedOrganization;
+                
+                // Update form title
+                this.Text = $"Uniform Manager - {_currentOrganization.OrganizationName} - {_currentUser!.FirstName} {_currentUser.LastName} ({GetAccountLevelText(_currentOrganization.UserAccountLevel)})";
+                
+                // Reload all data for the new organization
+                await LoadAllData();
             }
         }
 

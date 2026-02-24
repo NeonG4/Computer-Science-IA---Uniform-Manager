@@ -52,6 +52,16 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
+                // Get organization ID from query
+                if (!int.TryParse(req.Query["organizationId"], out int organizationId))
+                {
+                    return new BadRequestObjectResult(new StudentListResponse
+                    {
+                        Success = false,
+                        Message = "Organization ID is required."
+                    });
+                }
+
                 string? connectionString = _configuration.GetConnectionString("SqlConnection");
                 if (string.IsNullOrEmpty(connectionString))
                 {
@@ -62,9 +72,27 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Check permissions
-                var accountLevel = await _authService.GetUserAccountLevel(connection, userId);
-                if (!_authService.CanRead(accountLevel))
+                // Check if user has access to this organization
+                await using var accessCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                accessCmd.Parameters.AddWithValue("@UserId", userId);
+                accessCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var result = await accessCmd.ExecuteScalarAsync();
+                if (result == null)
+                {
+                    return new UnauthorizedObjectResult(new StudentListResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)result;
+                var accountLevelEnum = (AuthorizationService.AccountLevel)accountLevel;
+                if (!_authService.CanRead(accountLevelEnum))
                 {
                     return new UnauthorizedObjectResult(new StudentListResponse
                     {
@@ -78,18 +106,20 @@ namespace CompsciAzureFunctionAPI2026
                 string sqlQuery = @"
                     SELECT StudentId, StudentIdentifier, FirstName, LastName, Grade, 
                            CreatedDate, LastModified
-                    FROM [dbo].[Students]";
+                    FROM [dbo].[Students]
+                    WHERE OrganizationId = @OrgId";
 
                 if (!string.IsNullOrEmpty(gradeFilter) && int.TryParse(gradeFilter, out int grade))
                 {
-                    sqlQuery += " WHERE Grade = @Grade";
+                    sqlQuery += " AND Grade = @Grade";
                 }
 
                 sqlQuery += " ORDER BY LastName, FirstName";
 
-                // Get all students
+                // Get all students for this organization
                 var students = new List<StudentDto>();
                 await using var cmd = new SqlCommand(sqlQuery, connection);
+                cmd.Parameters.AddWithValue("@OrgId", organizationId);
                 
                 if (!string.IsNullOrEmpty(gradeFilter) && int.TryParse(gradeFilter, out int gradeValue))
                 {
@@ -269,10 +299,11 @@ namespace CompsciAzureFunctionAPI2026
                 // Insert student
                 await using var insertCmd = new SqlCommand(@"
                     INSERT INTO [dbo].[Students] 
-                    (StudentIdentifier, FirstName, LastName, Grade, ModifiedBy, LastModified)
-                    VALUES (@Id, @FirstName, @LastName, @Grade, @UserId, GETDATE());
+                    (OrganizationId, StudentIdentifier, FirstName, LastName, Grade, ModifiedBy, LastModified)
+                    VALUES (@OrgId, @Id, @FirstName, @LastName, @Grade, @UserId, GETDATE());
                     SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
 
+                insertCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
                 insertCmd.Parameters.AddWithValue("@Id", request.StudentIdentifier);
                 insertCmd.Parameters.AddWithValue("@FirstName", request.FirstName);
                 insertCmd.Parameters.AddWithValue("@LastName", request.LastName);

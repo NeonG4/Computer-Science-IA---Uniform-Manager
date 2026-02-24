@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,7 +13,7 @@ namespace Computer_Science_IA___Uniform_Manager
     public partial class LoginForm : Form
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string API_BASE_URL = "http://localhost:7109/api";
+        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
         private HashAlgorithm sha256 = SHA256.Create();
 
         public LoginForm()
@@ -50,8 +51,20 @@ namespace Computer_Science_IA___Uniform_Manager
                 if (result != null && result.Success)
                 {
                     this.Hide();
-                    UniformManagerAdminHome home = new UniformManagerAdminHome(result.User!);
-                    home.ShowDialog();
+                    
+                    // Show organization selector
+                    var orgSelector = new OrganizationSelectorForm(result.User!);
+                    var dialogResult = orgSelector.ShowDialog();
+                    
+                    if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                    {
+                        // Open main form with selected organization
+                        UniformManagerAdminHome home = new UniformManagerAdminHome(
+                            result.User!, 
+                            orgSelector.SelectedOrganization);
+                        home.ShowDialog();
+                    }
+                    
                     this.Close();
                 }
                 else
@@ -61,7 +74,7 @@ namespace Computer_Science_IA___Uniform_Manager
             }
             catch (HttpRequestException ex)
             {
-                MessageBox.Show($"Network error: {ex.Message}\nMake sure the Azure Function is running.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Network error: {ex.Message}\n\nAPI URL: {API_BASE_URL}\nMake sure the Azure Function is running or check your App.config for the correct ApiBaseUrl.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {

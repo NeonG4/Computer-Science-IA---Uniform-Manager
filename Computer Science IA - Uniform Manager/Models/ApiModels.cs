@@ -32,4 +32,16 @@ namespace Computer_Science_IA___Uniform_Manager.Models
         public string Message { get; set; } = string.Empty;
         public int? UserId { get; set; }
     }
+
+    /// <summary>
+    /// Organization data transfer object
+    /// </summary>
+    public class OrganizationDto
+    {
+        public int OrganizationId { get; set; }
+        public string OrganizationName { get; set; } = string.Empty;
+        public string OrganizationCode { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int? UserAccountLevel { get; set; }
+    }
 }

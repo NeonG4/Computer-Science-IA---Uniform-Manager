@@ -4,6 +4,10 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Azure migration sensitive files
+**/AzureConnectionString.txt
+**/DeployAzureFunction.ps1
+
 # User-specific files
 *.suo
 *.user

@@ -34,6 +34,7 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
+            switchOrganizationToolStripMenuItem = new ToolStripMenuItem();
             tableLayoutPanel1 = new TableLayoutPanel();
             panelUniforms = new Panel();
             dataGridViewUniforms = new DataGridView();
@@ -90,9 +91,18 @@
             // 
             // orgToolStripMenuItem
             // 
+            orgToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            switchOrganizationToolStripMenuItem});
             orgToolStripMenuItem.Name = "orgToolStripMenuItem";
             orgToolStripMenuItem.Size = new Size(59, 29);
             orgToolStripMenuItem.Text = "Org";
+            // 
+            // switchOrganizationToolStripMenuItem
+            // 
+            switchOrganizationToolStripMenuItem.Name = "switchOrganizationToolStripMenuItem";
+            switchOrganizationToolStripMenuItem.Size = new Size(224, 30);
+            switchOrganizationToolStripMenuItem.Text = "Switch Organization";
+            switchOrganizationToolStripMenuItem.Click += new System.EventHandler(this.SwitchOrganizationToolStripMenuItem_Click);
             // 
             // tableLayoutPanel1
             // 
@@ -251,6 +261,7 @@
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem editToolStripMenuItem;
         private ToolStripMenuItem orgToolStripMenuItem;
+        private ToolStripMenuItem switchOrganizationToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;
         private Panel panelUniforms;
         private DataGridView dataGridViewUniforms;

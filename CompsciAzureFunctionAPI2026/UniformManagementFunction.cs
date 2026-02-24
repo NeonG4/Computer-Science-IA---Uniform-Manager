@@ -29,7 +29,7 @@ namespace CompsciAzureFunctionAPI2026
         #region Get Uniforms (All roles can read)
 
         /// <summary>
-        /// GET all uniforms - All authenticated users can read
+        /// GET all uniforms - all authenticated users can read
         /// </summary>
         [Function("GetUniforms")]
         public async Task<IActionResult> GetUniforms(
@@ -49,6 +49,16 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
+                // Get organization ID from query
+                if (!int.TryParse(req.Query["organizationId"], out int organizationId))
+                {
+                    return new BadRequestObjectResult(new UniformListResponse
+                    {
+                        Success = false,
+                        Message = "Organization ID is required."
+                    });
+                }
+
                 string? connectionString = _configuration.GetConnectionString("SqlConnection");
                 if (string.IsNullOrEmpty(connectionString))
                 {
@@ -59,9 +69,27 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Check permissions
-                var accountLevel = await _authService.GetUserAccountLevel(connection, userId);
-                if (!_authService.CanRead(accountLevel))
+                // Check if user has access to this organization
+                await using var accessCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                accessCmd.Parameters.AddWithValue("@UserId", userId);
+                accessCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var result = await accessCmd.ExecuteScalarAsync();
+                if (result == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformListResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)result;
+                var accountLevelEnum = (AuthorizationService.AccountLevel)accountLevel;
+                if (!_authService.CanRead(accountLevelEnum))
                 {
                     return new UnauthorizedObjectResult(new UniformListResponse
                     {
@@ -70,14 +98,16 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
-                // Get all uniforms
+                // Get all uniforms for this organization
                 var uniforms = new List<UniformDto>();
                 await using var cmd = new SqlCommand(@"
                     SELECT UniformId, UniformIdentifier, UniformType, Size, 
                            IsCheckedOut, AssignedStudentId, Conditions, 
                            CreatedDate, LastModified
                     FROM [dbo].[Uniforms]
+                    WHERE OrganizationId = @OrgId
                     ORDER BY UniformIdentifier", connection);
+                cmd.Parameters.AddWithValue("@OrgId", organizationId);
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -247,10 +277,11 @@ namespace CompsciAzureFunctionAPI2026
                 // Insert uniform
                 await using var insertCmd = new SqlCommand(@"
                     INSERT INTO [dbo].[Uniforms] 
-                    (UniformIdentifier, UniformType, Size, IsCheckedOut, ModifiedBy, LastModified)
-                    VALUES (@Id, @Type, @Size, 0, @UserId, GETDATE());
+                    (OrganizationId, UniformIdentifier, UniformType, Size, IsCheckedOut, ModifiedBy, LastModified)
+                    VALUES (@OrgId, @Id, @Type, @Size, 0, @UserId, GETDATE());
                     SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
 
+                insertCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
                 insertCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
                 insertCmd.Parameters.AddWithValue("@Type", request.UniformType);
                 insertCmd.Parameters.AddWithValue("@Size", request.Size);
