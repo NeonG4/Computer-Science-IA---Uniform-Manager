@@ -20,6 +20,7 @@ namespace Computer_Science_IA___Uniform_Manager
         private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
         private UserInfo? _currentUser;
         private OrganizationDto? _currentOrganization;
+        private List<OrganizationUserDto>? _organizationUsers; // Store full user data for the organization
 
         public UniformManagerAdminHome()
         {
@@ -68,19 +69,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 var uniformsTask = LoadUniformsAsync();
                 var studentsTask = LoadStudentsAsync();
                 
-                // Only load users if current user is an administrator in this organization
-                Task? usersTask = null;
-                if (_currentOrganization?.UserAccountLevel == 0)
-                {
-                    usersTask = LoadUsersAsync();
-                    await Task.WhenAll(uniformsTask, studentsTask, usersTask);
-                }
-                else
-                {
-                    await Task.WhenAll(uniformsTask, studentsTask);
-                    dataGridViewUsers.DataSource = null;
-                    labelUsers.Text = "Users (Admin Only)";
-                }
+                // Load users data - visibility depends on admin status
+                var usersTask = LoadUsersAsync();
+                await Task.WhenAll(uniformsTask, studentsTask, usersTask);
             }
             catch (Exception ex)
             {
@@ -145,31 +136,68 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             try
             {
-                var response = await httpClient.GetAsync($"{API_BASE_URL}/GetUsers?userId={_currentUser?.UserId}");
-                
+                // Check if current user is an administrator in this organization
+                if (_currentOrganization?.UserAccountLevel != 0)
+                {
+                    // Non-admin: Show read-only message and hide management buttons
+                    dataGridViewUsers.DataSource = null;
+                    labelUsers.Text = "Users (Admin Only)";
+                    panelUsersButtons.Visible = false;
+                    
+                    // Hide the context menu for non-admins
+                    dataGridViewUsers.ContextMenuStrip = null;
+                    return;
+                }
+
+                // Admin: Load organization users and show management controls
+                var response = await httpClient.GetAsync(
+                    $"{API_BASE_URL}/GetOrganizationUsers?organizationId={_currentOrganization.OrganizationId}&userId={_currentUser?.UserId}");
+
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     labelUsers.Text = "Users (Insufficient Permissions)";
+                    panelUsersButtons.Visible = false;
+                    dataGridViewUsers.ContextMenuStrip = null;
                     return;
                 }
 
                 response.EnsureSuccessStatusCode();
                 var jsonString = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<UserListResponse>(jsonString, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<OrganizationUsersResponse>(jsonString, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
                 if (result?.Success == true && result.Users != null)
                 {
-                    dataGridViewUsers.DataSource = result.Users;
-                    FormatUsersGrid();
-                    labelUsers.Text = $"Users ({result.TotalCount})";
+                    // Store full user data
+                    _organizationUsers = result.Users;
+
+                    // Display simplified list
+                    var displayList = result.Users
+                        .Where(u => u.IsActive)
+                        .Select(u => new
+                        {
+                            UserId = u.UserId,
+                            Name = $"{u.FirstName} {u.LastName}",
+                            Role = GetRoleText(u.AccountLevel),
+                            Email = u.Email
+                        }).ToList();
+
+                    dataGridViewUsers.DataSource = displayList;
+                    FormatOrganizationUsersGrid();
+                    labelUsers.Text = $"Users ({result.Users.Count(u => u.IsActive)})";
+                    
+                    // Show management controls for admins
+                    panelUsersButtons.Visible = true;
+                    dataGridViewUsers.ContextMenuStrip = contextMenuStripUsers;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading users: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                panelUsersButtons.Visible = false;
+                dataGridViewUsers.ContextMenuStrip = null;
             }
         }
 
@@ -221,20 +249,244 @@ namespace Computer_Science_IA___Uniform_Manager
                 dataGridViewStudents.Columns["LastModified"].Visible = false;
         }
 
-        private void FormatUsersGrid()
+        private void FormatOrganizationUsersGrid()
         {
             if (dataGridViewUsers.Columns.Contains("UserId"))
                 dataGridViewUsers.Columns["UserId"].Visible = false;
-            
-            if (dataGridViewUsers.Columns.Contains("FirstName"))
-                dataGridViewUsers.Columns["FirstName"].HeaderText = "First Name";
-            
-            if (dataGridViewUsers.Columns.Contains("LastName"))
-                dataGridViewUsers.Columns["LastName"].HeaderText = "Last Name";
-            
-            if (dataGridViewUsers.Columns.Contains("AccountLevel"))
+
+            if (dataGridViewUsers.Columns.Contains("Name"))
             {
-                dataGridViewUsers.Columns["AccountLevel"].HeaderText = "Access Level";
+                dataGridViewUsers.Columns["Name"].HeaderText = "Name";
+                dataGridViewUsers.Columns["Name"].Width = 120;
+            }
+
+            if (dataGridViewUsers.Columns.Contains("Role"))
+            {
+                dataGridViewUsers.Columns["Role"].HeaderText = "Role";
+                dataGridViewUsers.Columns["Role"].Width = 80;
+            }
+
+            if (dataGridViewUsers.Columns.Contains("Email"))
+            {
+                dataGridViewUsers.Columns["Email"].HeaderText = "Email";
+                dataGridViewUsers.Columns["Email"].Width = 120;
+            }
+        }
+
+        private string GetRoleText(int accountLevel)
+        {
+            return accountLevel switch
+            {
+                0 => "Admin",
+                1 => "User",
+                2 => "Viewer",
+                _ => "Unknown"
+            };
+        }
+
+        private void DataGridViewUsers_SelectionChanged(object sender, EventArgs e)
+        {
+            if (!panelUsersButtons.Visible) return;
+
+            if (dataGridViewUsers.SelectedRows.Count == 0)
+            {
+                buttonChangeUserRole.Enabled = false;
+                buttonRemoveUserFromOrg.Enabled = false;
+                return;
+            }
+
+            var selectedRow = dataGridViewUsers.SelectedRows[0];
+            int selectedUserId = (int)selectedRow.Cells["UserId"].Value;
+
+            // Can't modify yourself
+            if (selectedUserId == _currentUser?.UserId)
+            {
+                buttonChangeUserRole.Enabled = false;
+                buttonRemoveUserFromOrg.Enabled = false;
+            }
+            else
+            {
+                buttonChangeUserRole.Enabled = true;
+                buttonRemoveUserFromOrg.Enabled = true;
+            }
+        }
+
+        private async void ButtonChangeUserRole_Click(object sender, EventArgs e)
+        {
+            await ChangeSelectedUserRole();
+        }
+
+        private async void ChangeRoleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await ChangeSelectedUserRole();
+        }
+
+        private async Task ChangeSelectedUserRole()
+        {
+            if (dataGridViewUsers.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewUsers.SelectedRows[0];
+            int selectedUserId = (int)selectedRow.Cells["UserId"].Value;
+
+            var user = _organizationUsers?.FirstOrDefault(u => u.UserId == selectedUserId);
+            if (user == null) return;
+
+            // Show role selection dialog
+            using var roleForm = new Form();
+            roleForm.Text = $"Change Role - {user.FirstName} {user.LastName}";
+            roleForm.Size = new System.Drawing.Size(380, 220);
+            roleForm.StartPosition = FormStartPosition.CenterParent;
+            roleForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            roleForm.MaximizeBox = false;
+            roleForm.MinimizeBox = false;
+
+            var label = new Label
+            {
+                Text = $"Select new role for {user.FirstName} {user.LastName}:",
+                Location = new System.Drawing.Point(15, 15),
+                Size = new System.Drawing.Size(340, 25)
+            };
+
+            var comboBox = new ComboBox
+            {
+                Location = new System.Drawing.Point(15, 45),
+                Size = new System.Drawing.Size(340, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            comboBox.Items.AddRange(new object[] { "Administrator", "User", "Viewer" });
+            comboBox.SelectedIndex = user.AccountLevel;
+
+            var btnOk = new Button
+            {
+                Text = "Change Role",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(185, 95),
+                Size = new System.Drawing.Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(15, 95),
+                Size = new System.Drawing.Size(150, 35)
+            };
+
+            roleForm.Controls.AddRange(new Control[] { label, comboBox, btnOk, btnCancel });
+            roleForm.AcceptButton = btnOk;
+            roleForm.CancelButton = btnCancel;
+
+            if (roleForm.ShowDialog() == DialogResult.OK)
+            {
+                await UpdateUserRoleAsync(selectedUserId, comboBox.SelectedIndex, $"{user.FirstName} {user.LastName}");
+            }
+        }
+
+        private async Task UpdateUserRoleAsync(int targetUserId, int newAccountLevel, string userName)
+        {
+            try
+            {
+                var request = new UpdateUserRoleRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    RequestingUserId = _currentUser!.UserId,
+                    TargetUserId = targetUserId,
+                    NewAccountLevel = newAccountLevel
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PutAsync($"{API_BASE_URL}/UpdateOrganizationUserRole", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UpdateUserRoleResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Role updated for {userName}!", "Success", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUsersAsync(); // Refresh the list
+                }
+                else
+                {
+                    MessageBox.Show($"Error updating role:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating role:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonRemoveUserFromOrg_Click(object sender, EventArgs e)
+        {
+            await RemoveSelectedUser();
+        }
+
+        private async void RemoveFromOrgToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await RemoveSelectedUser();
+        }
+
+        private async Task RemoveSelectedUser()
+        {
+            if (dataGridViewUsers.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewUsers.SelectedRows[0];
+            int selectedUserId = (int)selectedRow.Cells["UserId"].Value;
+
+            var user = _organizationUsers?.FirstOrDefault(u => u.UserId == selectedUserId);
+            if (user == null) return;
+
+            var confirmResult = MessageBox.Show(
+                $"Remove {user.FirstName} {user.LastName} from this organization?\n\n" +
+                $"They will lose all access to this organization's data.",
+                "Confirm Remove",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            await RemoveUserAsync(selectedUserId, $"{user.FirstName} {user.LastName}");
+        }
+
+        private async Task RemoveUserAsync(int targetUserId, string userName)
+        {
+            try
+            {
+                var response = await httpClient.DeleteAsync(
+                    $"{API_BASE_URL}/RemoveOrganizationUser?organizationId={_currentOrganization!.OrganizationId}" +
+                    $"&targetUserId={targetUserId}&requestingUserId={_currentUser!.UserId}");
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<RemoveUserResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"{userName} removed from organization.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUsersAsync(); // Refresh the list
+                }
+                else
+                {
+                    MessageBox.Show($"Error removing user:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error removing user:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -253,6 +505,71 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        private async void JoinOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var joinOrgForm = new JoinOrganizationForm(_currentUser!);
+            if (joinOrgForm.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show("Your request has been sent to the organization administrators for approval.\n\nUse 'Organization > Switch Organization' once approved.", 
+                    "Request Sent", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void OrganizationInfoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization == null)
+            {
+                MessageBox.Show("No organization is currently selected.", 
+                    "No Organization", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var orgInfoForm = new OrganizationInfoForm(_currentOrganization);
+            orgInfoForm.ShowDialog();
+        }
+
+        private void ManageJoinRequestsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization == null)
+            {
+                MessageBox.Show("No organization is currently selected.", 
+                    "No Organization", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Check if user is admin
+            if (_currentOrganization.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can manage join requests.", 
+                    "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var manageRequestsForm = new ManageJoinRequestsForm(_currentUser!, _currentOrganization);
+            manageRequestsForm.ShowDialog();
+        }
+
+        private void ManageUsersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization == null)
+            {
+                MessageBox.Show("No organization is currently selected.", 
+                    "No Organization", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Check if user is admin
+            if (_currentOrganization.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can manage users.", 
+                    "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var manageUsersForm = new ManageOrganizationUsersForm(_currentUser!, _currentOrganization);
+            manageUsersForm.ShowDialog();
+        }
+
         // Response Models
         private class UniformListResponse
         {
@@ -262,23 +579,6 @@ namespace Computer_Science_IA___Uniform_Manager
             public int TotalCount { get; set; }
         }
 
-        private class StudentListResponse
-        {
-            public bool Success { get; set; }
-            public string Message { get; set; } = string.Empty;
-            public List<StudentDto>? Students { get; set; }
-            public int TotalCount { get; set; }
-        }
-
-        private class UserListResponse
-        {
-            public bool Success { get; set; }
-            public string Message { get; set; } = string.Empty;
-            public List<UserDto>? Users { get; set; }
-            public int TotalCount { get; set; }
-        }
-
-        // DTOs for API responses
         private class UniformDto
         {
             public int UniformId { get; set; }
@@ -287,6 +587,14 @@ namespace Computer_Science_IA___Uniform_Manager
             public int Size { get; set; }
             public bool IsCheckedOut { get; set; }
             public string? AssignedStudentId { get; set; }
+        }
+
+        private class StudentListResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public List<StudentDto>? Students { get; set; }
+            public int TotalCount { get; set; }
         }
 
         private class StudentDto
@@ -306,6 +614,47 @@ namespace Computer_Science_IA___Uniform_Manager
             public string LastName { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
             public int AccountLevel { get; set; }
+        }
+
+        // Organization User Management Models
+        private class OrganizationUserDto
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public int AccountLevel { get; set; }
+            public DateTime JoinedDate { get; set; }
+            public bool IsActive { get; set; }
+        }
+
+        private class OrganizationUsersResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public List<OrganizationUserDto>? Users { get; set; }
+            public int TotalCount { get; set; }
+        }
+
+        private class UpdateUserRoleRequest
+        {
+            public int OrganizationId { get; set; }
+            public int RequestingUserId { get; set; }
+            public int TargetUserId { get; set; }
+            public int NewAccountLevel { get; set; }
+        }
+
+        private class UpdateUserRoleResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+        }
+
+        private class RemoveUserResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
         }
     }
 }

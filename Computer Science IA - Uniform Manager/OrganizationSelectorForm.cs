@@ -39,20 +39,20 @@ namespace Computer_Science_IA___Uniform_Manager
                 listBoxOrganizations.Items.Add("Loading organizations...");
 
                 var response = await httpClient.GetAsync($"{API_BASE_URL}/GetOrganizations?userId={_currentUser.UserId}");
-                
+
                 var jsonString = await response.Content.ReadAsStringAsync();
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     // Log to console but show user-friendly message in list
                     System.Diagnostics.Debug.WriteLine($"Error loading organizations: {response.StatusCode} - {jsonString}");
-                    
+
                     listBoxOrganizations.Items.Clear();
                     listBoxOrganizations.Items.Add("No organizations");
                     buttonSelect.Enabled = false;
                     return;
                 }
-                
+
                 var result = JsonSerializer.Deserialize<GetOrganizationsResponse>(jsonString, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -89,7 +89,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 // Successfully loaded organizations
                 _organizations = result.Organizations;
-                
+
                 foreach (var org in _organizations)
                 {
                     var roleText = GetRoleText(org.UserAccountLevel);
@@ -166,7 +166,7 @@ namespace Computer_Science_IA___Uniform_Manager
             }
 
             SelectedOrganization = _organizations[listBoxOrganizations.SelectedIndex];
-            
+
             if (SelectedOrganization == null)
             {
                 System.Diagnostics.Debug.WriteLine("Selected organization is null");
@@ -188,6 +188,11 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        private async void ButtonRefresh_Click(object sender, EventArgs e)
+        {
+            await LoadOrganizationsAsync();
+        }
+
         private void ButtonLogout_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
@@ -201,6 +206,17 @@ namespace Computer_Science_IA___Uniform_Manager
             public string Message { get; set; } = string.Empty;
             public List<OrganizationDto>? Organizations { get; set; }
             public int TotalCount { get; set; }
+        }
+
+        private async void buttonJohnOrg_Click(object sender, EventArgs e)
+        {
+            var createOrgForm = new JoinOrganizationForm(_currentUser);
+            if (createOrgForm.ShowDialog() == DialogResult.OK)
+            {
+                // Reload organizations after creating a new one
+                await LoadOrganizationsAsync();
+                buttonSelect.Enabled = true;
+            }
         }
     }
 }

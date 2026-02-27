@@ -17,135 +17,146 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private void InitializeComponent()
         {
-            this.labelTitle = new System.Windows.Forms.Label();
-            this.labelOrgName = new System.Windows.Forms.Label();
-            this.textBoxOrgName = new System.Windows.Forms.TextBox();
-            this.labelOrgCode = new System.Windows.Forms.Label();
-            this.textBoxOrgCode = new System.Windows.Forms.TextBox();
-            this.labelDescription = new System.Windows.Forms.Label();
-            this.textBoxDescription = new System.Windows.Forms.TextBox();
-            this.buttonCreate = new System.Windows.Forms.Button();
-            this.buttonCancel = new System.Windows.Forms.Button();
-            this.labelInfo = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            labelTitle = new Label();
+            labelOrgName = new Label();
+            textBoxOrgName = new TextBox();
+            labelOrgCode = new Label();
+            textBoxOrgCode = new TextBox();
+            labelDescription = new Label();
+            textBoxDescription = new TextBox();
+            buttonCreate = new Button();
+            buttonCancel = new Button();
+            labelInfo = new Label();
+            SuspendLayout();
             // 
             // labelTitle
             // 
-            this.labelTitle.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
-            this.labelTitle.Location = new System.Drawing.Point(20, 20);
-            this.labelTitle.Name = "labelTitle";
-            this.labelTitle.Size = new System.Drawing.Size(460, 40);
-            this.labelTitle.TabIndex = 0;
-            this.labelTitle.Text = "Create New Organization";
-            this.labelTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            labelTitle.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            labelTitle.Location = new Point(11, 12);
+            labelTitle.Margin = new Padding(2, 0, 2, 0);
+            labelTitle.Name = "labelTitle";
+            labelTitle.Size = new Size(325, 24);
+            labelTitle.TabIndex = 0;
+            labelTitle.Text = "Create New Organization";
+            labelTitle.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // labelOrgName
             // 
-            this.labelOrgName.AutoSize = true;
-            this.labelOrgName.Location = new System.Drawing.Point(40, 80);
-            this.labelOrgName.Name = "labelOrgName";
-            this.labelOrgName.Size = new System.Drawing.Size(175, 25);
-            this.labelOrgName.TabIndex = 1;
-            this.labelOrgName.Text = "Organization Name:";
+            labelOrgName.AutoSize = true;
+            labelOrgName.Location = new Point(28, 48);
+            labelOrgName.Margin = new Padding(2, 0, 2, 0);
+            labelOrgName.Name = "labelOrgName";
+            labelOrgName.Size = new Size(113, 15);
+            labelOrgName.TabIndex = 1;
+            labelOrgName.Text = "Organization Name:";
             // 
             // textBoxOrgName
             // 
-            this.textBoxOrgName.Location = new System.Drawing.Point(40, 110);
-            this.textBoxOrgName.MaxLength = 100;
-            this.textBoxOrgName.Name = "textBoxOrgName";
-            this.textBoxOrgName.Size = new System.Drawing.Size(420, 31);
-            this.textBoxOrgName.TabIndex = 2;
+            textBoxOrgName.Location = new Point(28, 66);
+            textBoxOrgName.Margin = new Padding(2, 2, 2, 2);
+            textBoxOrgName.MaxLength = 100;
+            textBoxOrgName.Name = "textBoxOrgName";
+            textBoxOrgName.Size = new Size(295, 23);
+            textBoxOrgName.TabIndex = 2;
             // 
             // labelOrgCode
             // 
-            this.labelOrgCode.AutoSize = true;
-            this.labelOrgCode.Location = new System.Drawing.Point(40, 160);
-            this.labelOrgCode.Name = "labelOrgCode";
-            this.labelOrgCode.Size = new System.Drawing.Size(170, 25);
-            this.labelOrgCode.TabIndex = 3;
-            this.labelOrgCode.Text = "Organization Code:";
+            labelOrgCode.AutoSize = true;
+            labelOrgCode.Location = new Point(28, 96);
+            labelOrgCode.Margin = new Padding(2, 0, 2, 0);
+            labelOrgCode.Name = "labelOrgCode";
+            labelOrgCode.Size = new Size(109, 15);
+            labelOrgCode.TabIndex = 3;
+            labelOrgCode.Text = "Organization Code:";
             // 
             // textBoxOrgCode
             // 
-            this.textBoxOrgCode.Location = new System.Drawing.Point(40, 190);
-            this.textBoxOrgCode.MaxLength = 50;
-            this.textBoxOrgCode.Name = "textBoxOrgCode";
-            this.textBoxOrgCode.Size = new System.Drawing.Size(420, 31);
-            this.textBoxOrgCode.TabIndex = 4;
+            textBoxOrgCode.Location = new Point(28, 114);
+            textBoxOrgCode.Margin = new Padding(2, 2, 2, 2);
+            textBoxOrgCode.MaxLength = 50;
+            textBoxOrgCode.Name = "textBoxOrgCode";
+            textBoxOrgCode.Size = new Size(295, 23);
+            textBoxOrgCode.TabIndex = 4;
             // 
             // labelDescription
             // 
-            this.labelDescription.AutoSize = true;
-            this.labelDescription.Location = new System.Drawing.Point(40, 240);
-            this.labelDescription.Name = "labelDescription";
-            this.labelDescription.Size = new System.Drawing.Size(176, 25);
-            this.labelDescription.TabIndex = 5;
-            this.labelDescription.Text = "Description (optional):";
+            labelDescription.AutoSize = true;
+            labelDescription.Location = new Point(28, 144);
+            labelDescription.Margin = new Padding(2, 0, 2, 0);
+            labelDescription.Name = "labelDescription";
+            labelDescription.Size = new Size(125, 15);
+            labelDescription.TabIndex = 5;
+            labelDescription.Text = "Description (optional):";
             // 
             // textBoxDescription
             // 
-            this.textBoxDescription.Location = new System.Drawing.Point(40, 270);
-            this.textBoxDescription.MaxLength = 500;
-            this.textBoxDescription.Multiline = true;
-            this.textBoxDescription.Name = "textBoxDescription";
-            this.textBoxDescription.Size = new System.Drawing.Size(420, 80);
-            this.textBoxDescription.TabIndex = 6;
+            textBoxDescription.Location = new Point(28, 162);
+            textBoxDescription.Margin = new Padding(2, 2, 2, 2);
+            textBoxDescription.MaxLength = 500;
+            textBoxDescription.Multiline = true;
+            textBoxDescription.Name = "textBoxDescription";
+            textBoxDescription.Size = new Size(295, 50);
+            textBoxDescription.TabIndex = 6;
             // 
             // buttonCreate
             // 
-            this.buttonCreate.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.buttonCreate.Location = new System.Drawing.Point(260, 420);
-            this.buttonCreate.Name = "buttonCreate";
-            this.buttonCreate.Size = new System.Drawing.Size(200, 45);
-            this.buttonCreate.TabIndex = 7;
-            this.buttonCreate.Text = "Create Organization";
-            this.buttonCreate.UseVisualStyleBackColor = true;
-            this.buttonCreate.Click += new System.EventHandler(this.ButtonCreate_Click);
+            buttonCreate.Font = new Font("Segoe UI", 11F);
+            buttonCreate.Location = new Point(182, 252);
+            buttonCreate.Margin = new Padding(2, 2, 2, 2);
+            buttonCreate.Name = "buttonCreate";
+            buttonCreate.Size = new Size(140, 27);
+            buttonCreate.TabIndex = 7;
+            buttonCreate.Text = "Create Organization";
+            buttonCreate.UseVisualStyleBackColor = true;
+            buttonCreate.Click += ButtonCreate_Click;
             // 
             // buttonCancel
             // 
-            this.buttonCancel.Location = new System.Drawing.Point(40, 420);
-            this.buttonCancel.Name = "buttonCancel";
-            this.buttonCancel.Size = new System.Drawing.Size(120, 45);
-            this.buttonCancel.TabIndex = 8;
-            this.buttonCancel.Text = "Cancel";
-            this.buttonCancel.UseVisualStyleBackColor = true;
-            this.buttonCancel.Click += new System.EventHandler(this.ButtonCancel_Click);
+            buttonCancel.Location = new Point(28, 252);
+            buttonCancel.Margin = new Padding(2, 2, 2, 2);
+            buttonCancel.Name = "buttonCancel";
+            buttonCancel.Size = new Size(84, 27);
+            buttonCancel.TabIndex = 8;
+            buttonCancel.Text = "Cancel";
+            buttonCancel.UseVisualStyleBackColor = true;
+            buttonCancel.Click += ButtonCancel_Click;
             // 
             // labelInfo
             // 
-            this.labelInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelInfo.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.labelInfo.Location = new System.Drawing.Point(40, 360);
-            this.labelInfo.Name = "labelInfo";
-            this.labelInfo.Size = new System.Drawing.Size(420, 45);
-            this.labelInfo.TabIndex = 9;
-            this.labelInfo.Text = "You will be assigned as an Administrator of this organization.";
-            this.labelInfo.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            labelInfo.Font = new Font("Segoe UI", 9F);
+            labelInfo.ForeColor = SystemColors.GrayText;
+            labelInfo.Location = new Point(28, 216);
+            labelInfo.Margin = new Padding(2, 0, 2, 0);
+            labelInfo.Name = "labelInfo";
+            labelInfo.Size = new Size(294, 27);
+            labelInfo.TabIndex = 9;
+            labelInfo.Text = "You will be assigned as an Administrator of this organization.";
+            labelInfo.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // CreateOrganizationForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(500, 490);
-            this.Controls.Add(this.labelInfo);
-            this.Controls.Add(this.buttonCancel);
-            this.Controls.Add(this.buttonCreate);
-            this.Controls.Add(this.textBoxDescription);
-            this.Controls.Add(this.labelDescription);
-            this.Controls.Add(this.textBoxOrgCode);
-            this.Controls.Add(this.labelOrgCode);
-            this.Controls.Add(this.textBoxOrgName);
-            this.Controls.Add(this.labelOrgName);
-            this.Controls.Add(this.labelTitle);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "CreateOrganizationForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Create Organization";
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(350, 294);
+            Controls.Add(labelInfo);
+            Controls.Add(buttonCancel);
+            Controls.Add(buttonCreate);
+            Controls.Add(textBoxDescription);
+            Controls.Add(labelDescription);
+            Controls.Add(textBoxOrgCode);
+            Controls.Add(labelOrgCode);
+            Controls.Add(textBoxOrgName);
+            Controls.Add(labelOrgName);
+            Controls.Add(labelTitle);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(2, 2, 2, 2);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "CreateOrganizationForm";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Create Organization";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

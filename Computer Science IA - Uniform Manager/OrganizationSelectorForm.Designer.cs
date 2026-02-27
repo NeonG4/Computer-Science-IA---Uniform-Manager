@@ -17,137 +17,175 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private void InitializeComponent()
         {
-            this.labelTitle = new System.Windows.Forms.Label();
-            this.labelSubtitle = new System.Windows.Forms.Label();
-            this.listBoxOrganizations = new System.Windows.Forms.ListBox();
-            this.buttonSelect = new System.Windows.Forms.Button();
-            this.buttonCreateOrg = new System.Windows.Forms.Button();
-            this.buttonLogout = new System.Windows.Forms.Button();
-            this.labelUserInfo = new System.Windows.Forms.Label();
-            this.panelHeader = new System.Windows.Forms.Panel();
-            this.panelFooter = new System.Windows.Forms.Panel();
-            this.panelHeader.SuspendLayout();
-            this.panelFooter.SuspendLayout();
-            this.SuspendLayout();
+            labelTitle = new Label();
+            labelSubtitle = new Label();
+            listBoxOrganizations = new ListBox();
+            buttonSelect = new Button();
+            buttonCreateOrg = new Button();
+            buttonRefresh = new Button();
+            buttonLogout = new Button();
+            labelUserInfo = new Label();
+            panelHeader = new Panel();
+            panelFooter = new Panel();
+            buttonJohnOrg = new Button();
+            panelHeader.SuspendLayout();
+            panelFooter.SuspendLayout();
+            SuspendLayout();
             // 
             // labelTitle
             // 
-            this.labelTitle.Dock = System.Windows.Forms.DockStyle.Top;
-            this.labelTitle.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold);
-            this.labelTitle.Location = new System.Drawing.Point(0, 0);
-            this.labelTitle.Name = "labelTitle";
-            this.labelTitle.Size = new System.Drawing.Size(600, 50);
-            this.labelTitle.TabIndex = 0;
-            this.labelTitle.Text = "Select Organization";
-            this.labelTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            labelTitle.Dock = DockStyle.Top;
+            labelTitle.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
+            labelTitle.Location = new Point(0, 18);
+            labelTitle.Margin = new Padding(2, 0, 2, 0);
+            labelTitle.Name = "labelTitle";
+            labelTitle.Size = new Size(420, 30);
+            labelTitle.TabIndex = 0;
+            labelTitle.Text = "Select Organization";
+            labelTitle.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // labelSubtitle
             // 
-            this.labelSubtitle.Dock = System.Windows.Forms.DockStyle.Top;
-            this.labelSubtitle.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.labelSubtitle.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.labelSubtitle.Location = new System.Drawing.Point(0, 50);
-            this.labelSubtitle.Name = "labelSubtitle";
-            this.labelSubtitle.Size = new System.Drawing.Size(600, 30);
-            this.labelSubtitle.TabIndex = 1;
-            this.labelSubtitle.Text = "Choose an organization to manage";
-            this.labelSubtitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            labelSubtitle.Dock = DockStyle.Top;
+            labelSubtitle.Font = new Font("Segoe UI", 10F);
+            labelSubtitle.ForeColor = SystemColors.GrayText;
+            labelSubtitle.Location = new Point(0, 0);
+            labelSubtitle.Margin = new Padding(2, 0, 2, 0);
+            labelSubtitle.Name = "labelSubtitle";
+            labelSubtitle.Size = new Size(420, 18);
+            labelSubtitle.TabIndex = 1;
+            labelSubtitle.Text = "Choose an organization to manage";
+            labelSubtitle.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // listBoxOrganizations
             // 
-            this.listBoxOrganizations.Font = new System.Drawing.Font("Segoe UI", 12F);
-            this.listBoxOrganizations.FormattingEnabled = true;
-            this.listBoxOrganizations.ItemHeight = 32;
-            this.listBoxOrganizations.Location = new System.Drawing.Point(50, 150);
-            this.listBoxOrganizations.Name = "listBoxOrganizations";
-            this.listBoxOrganizations.Size = new System.Drawing.Size(500, 260);
-            this.listBoxOrganizations.TabIndex = 2;
-            this.listBoxOrganizations.DoubleClick += new System.EventHandler(this.ListBoxOrganizations_DoubleClick);
+            listBoxOrganizations.Font = new Font("Segoe UI", 12F);
+            listBoxOrganizations.FormattingEnabled = true;
+            listBoxOrganizations.ItemHeight = 21;
+            listBoxOrganizations.Location = new Point(35, 90);
+            listBoxOrganizations.Margin = new Padding(2, 2, 2, 2);
+            listBoxOrganizations.Name = "listBoxOrganizations";
+            listBoxOrganizations.Size = new Size(351, 151);
+            listBoxOrganizations.TabIndex = 2;
+            listBoxOrganizations.DoubleClick += ListBoxOrganizations_DoubleClick;
             // 
             // buttonSelect
             // 
-            this.buttonSelect.Font = new System.Drawing.Font("Segoe UI", 12F);
-            this.buttonSelect.Location = new System.Drawing.Point(350, 10);
-            this.buttonSelect.Name = "buttonSelect";
-            this.buttonSelect.Size = new System.Drawing.Size(200, 45);
-            this.buttonSelect.TabIndex = 3;
-            this.buttonSelect.Text = "Select";
-            this.buttonSelect.UseVisualStyleBackColor = true;
-            this.buttonSelect.Click += new System.EventHandler(this.ButtonSelect_Click);
+            buttonSelect.Font = new Font("Segoe UI", 12F);
+            buttonSelect.Location = new Point(246, 252);
+            buttonSelect.Margin = new Padding(2, 2, 2, 2);
+            buttonSelect.Name = "buttonSelect";
+            buttonSelect.Size = new Size(140, 27);
+            buttonSelect.TabIndex = 3;
+            buttonSelect.Text = "Select";
+            buttonSelect.UseVisualStyleBackColor = true;
+            buttonSelect.Click += ButtonSelect_Click;
             // 
             // buttonCreateOrg
             // 
-            this.buttonCreateOrg.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.buttonCreateOrg.Location = new System.Drawing.Point(50, 10);
-            this.buttonCreateOrg.Name = "buttonCreateOrg";
-            this.buttonCreateOrg.Size = new System.Drawing.Size(200, 45);
-            this.buttonCreateOrg.TabIndex = 4;
-            this.buttonCreateOrg.Text = "Create New Org";
-            this.buttonCreateOrg.UseVisualStyleBackColor = true;
-            this.buttonCreateOrg.Click += new System.EventHandler(this.ButtonCreateOrg_Click);
+            buttonCreateOrg.Font = new Font("Segoe UI", 11F);
+            buttonCreateOrg.Location = new Point(35, 6);
+            buttonCreateOrg.Margin = new Padding(2, 2, 2, 2);
+            buttonCreateOrg.Name = "buttonCreateOrg";
+            buttonCreateOrg.Size = new Size(138, 27);
+            buttonCreateOrg.TabIndex = 4;
+            buttonCreateOrg.Text = "Create New Org";
+            buttonCreateOrg.UseVisualStyleBackColor = true;
+            buttonCreateOrg.Click += ButtonCreateOrg_Click;
+            // 
+            // buttonRefresh
+            // 
+            buttonRefresh.Font = new Font("Segoe UI", 11F);
+            buttonRefresh.Location = new Point(246, 6);
+            buttonRefresh.Margin = new Padding(2, 2, 2, 2);
+            buttonRefresh.Name = "buttonRefresh";
+            buttonRefresh.Size = new Size(138, 27);
+            buttonRefresh.TabIndex = 5;
+            buttonRefresh.Text = "Refresh";
+            buttonRefresh.UseVisualStyleBackColor = true;
+            buttonRefresh.Click += ButtonRefresh_Click;
             // 
             // buttonLogout
             // 
-            this.buttonLogout.Location = new System.Drawing.Point(50, 430);
-            this.buttonLogout.Name = "buttonLogout";
-            this.buttonLogout.Size = new System.Drawing.Size(100, 35);
-            this.buttonLogout.TabIndex = 5;
-            this.buttonLogout.Text = "Logout";
-            this.buttonLogout.UseVisualStyleBackColor = true;
-            this.buttonLogout.Click += new System.EventHandler(this.ButtonLogout_Click);
+            buttonLogout.Location = new Point(35, 258);
+            buttonLogout.Margin = new Padding(2, 2, 2, 2);
+            buttonLogout.Name = "buttonLogout";
+            buttonLogout.Size = new Size(70, 21);
+            buttonLogout.TabIndex = 5;
+            buttonLogout.Text = "Logout";
+            buttonLogout.UseVisualStyleBackColor = true;
+            buttonLogout.Click += ButtonLogout_Click;
             // 
             // labelUserInfo
             // 
-            this.labelUserInfo.AutoSize = true;
-            this.labelUserInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelUserInfo.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.labelUserInfo.Location = new System.Drawing.Point(50, 110);
-            this.labelUserInfo.Name = "labelUserInfo";
-            this.labelUserInfo.Size = new System.Drawing.Size(200, 25);
-            this.labelUserInfo.TabIndex = 6;
-            this.labelUserInfo.Text = "Logged in as: User Name";
+            labelUserInfo.AutoSize = true;
+            labelUserInfo.Font = new Font("Segoe UI", 9F);
+            labelUserInfo.ForeColor = SystemColors.GrayText;
+            labelUserInfo.Location = new Point(35, 66);
+            labelUserInfo.Margin = new Padding(2, 0, 2, 0);
+            labelUserInfo.Name = "labelUserInfo";
+            labelUserInfo.Size = new Size(138, 15);
+            labelUserInfo.TabIndex = 6;
+            labelUserInfo.Text = "Logged in as: User Name";
             // 
             // panelHeader
             // 
-            this.panelHeader.Controls.Add(this.labelTitle);
-            this.panelHeader.Controls.Add(this.labelSubtitle);
-            this.panelHeader.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panelHeader.Location = new System.Drawing.Point(0, 0);
-            this.panelHeader.Name = "panelHeader";
-            this.panelHeader.Size = new System.Drawing.Size(600, 80);
-            this.panelHeader.TabIndex = 7;
+            panelHeader.Controls.Add(labelTitle);
+            panelHeader.Controls.Add(labelSubtitle);
+            panelHeader.Dock = DockStyle.Top;
+            panelHeader.Location = new Point(0, 0);
+            panelHeader.Margin = new Padding(2, 2, 2, 2);
+            panelHeader.Name = "panelHeader";
+            panelHeader.Size = new Size(420, 48);
+            panelHeader.TabIndex = 7;
             // 
             // panelFooter
             // 
-            this.panelFooter.Controls.Add(this.buttonCreateOrg);
-            this.panelFooter.Controls.Add(this.buttonSelect);
-            this.panelFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelFooter.Location = new System.Drawing.Point(0, 480);
-            this.panelFooter.Name = "panelFooter";
-            this.panelFooter.Size = new System.Drawing.Size(600, 70);
-            this.panelFooter.TabIndex = 8;
+            panelFooter.Controls.Add(buttonCreateOrg);
+            panelFooter.Controls.Add(buttonRefresh);
+            panelFooter.Controls.Add(buttonSelect);
+            panelFooter.Dock = DockStyle.Bottom;
+            panelFooter.Location = new Point(0, 295);
+            panelFooter.Margin = new Padding(2, 2, 2, 2);
+            panelFooter.Name = "panelFooter";
+            panelFooter.Size = new Size(420, 48);
+            panelFooter.TabIndex = 8;
+            // 
+            // buttonJohnOrg
+            // 
+            buttonJohnOrg.Font = new Font("Segoe UI", 11F);
+            buttonJohnOrg.Location = new Point(246, 6);
+            buttonJohnOrg.Margin = new Padding(2);
+            buttonJohnOrg.Name = "buttonJohnOrg";
+            buttonJohnOrg.Size = new Size(138, 27);
+            buttonJohnOrg.TabIndex = 5;
+            buttonJohnOrg.Text = "Join Org";
+            buttonJohnOrg.UseVisualStyleBackColor = true;
+            buttonJohnOrg.Click += buttonJohnOrg_Click;
             // 
             // OrganizationSelectorForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(600, 550);
-            this.Controls.Add(this.panelFooter);
-            this.Controls.Add(this.panelHeader);
-            this.Controls.Add(this.labelUserInfo);
-            this.Controls.Add(this.buttonLogout);
-            this.Controls.Add(this.listBoxOrganizations);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "OrganizationSelectorForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Select Organization";
-            this.Load += new System.EventHandler(this.OrganizationSelectorForm_Load);
-            this.panelHeader.ResumeLayout(false);
-            this.panelFooter.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(420, 343);
+            Controls.Add(panelFooter);
+            Controls.Add(panelHeader);
+            Controls.Add(buttonSelect);
+            Controls.Add(labelUserInfo);
+            Controls.Add(buttonLogout);
+            Controls.Add(listBoxOrganizations);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Margin = new Padding(2, 2, 2, 2);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "OrganizationSelectorForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Select Organization";
+            Load += OrganizationSelectorForm_Load;
+            panelHeader.ResumeLayout(false);
+            panelFooter.ResumeLayout(false);
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -157,9 +195,11 @@ namespace Computer_Science_IA___Uniform_Manager
         private System.Windows.Forms.ListBox listBoxOrganizations;
         private System.Windows.Forms.Button buttonSelect;
         private System.Windows.Forms.Button buttonCreateOrg;
+        private System.Windows.Forms.Button buttonRefresh;
         private System.Windows.Forms.Button buttonLogout;
         private System.Windows.Forms.Label labelUserInfo;
         private System.Windows.Forms.Panel panelHeader;
         private System.Windows.Forms.Panel panelFooter;
+        private Button buttonJohnOrg;
     }
 }
