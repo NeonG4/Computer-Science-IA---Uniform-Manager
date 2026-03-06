@@ -46,6 +46,14 @@
             labelUniforms = new Label();
             panelStudents = new Panel();
             dataGridViewStudents = new DataGridView();
+            panelStudentsButtons = new Panel();
+            buttonAddStudent = new Button();
+            buttonEditStudent = new Button();
+            buttonDeleteStudent = new Button();
+            contextMenuStripStudents = new ContextMenuStrip();
+            addStudentToolStripMenuItem = new ToolStripMenuItem();
+            editStudentToolStripMenuItem = new ToolStripMenuItem();
+            deleteStudentToolStripMenuItem = new ToolStripMenuItem();
             labelStudents = new Label();
             panelUsers = new Panel();
             dataGridViewUsers = new DataGridView();
@@ -63,6 +71,7 @@
             ((System.ComponentModel.ISupportInitialize)dataGridViewUniforms).BeginInit();
             panelStudents.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).BeginInit();
+            contextMenuStripStudents.SuspendLayout();
             panelUsers.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewUsers).BeginInit();
             contextMenuStripUsers.SuspendLayout();
@@ -210,6 +219,7 @@
             // panelStudents
             // 
             panelStudents.Controls.Add(dataGridViewStudents);
+            panelStudents.Controls.Add(panelStudentsButtons);
             panelStudents.Controls.Add(labelStudents);
             panelStudents.Dock = DockStyle.Fill;
             panelStudents.Location = new Point(328, 2);
@@ -224,14 +234,92 @@
             dataGridViewStudents.AllowUserToDeleteRows = false;
             dataGridViewStudents.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridViewStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewStudents.ContextMenuStrip = contextMenuStripStudents;
             dataGridViewStudents.Dock = DockStyle.Fill;
             dataGridViewStudents.Location = new Point(0, 24);
             dataGridViewStudents.Margin = new Padding(2, 2, 2, 2);
+            dataGridViewStudents.MultiSelect = false;
             dataGridViewStudents.Name = "dataGridViewStudents";
             dataGridViewStudents.ReadOnly = true;
             dataGridViewStudents.RowHeadersWidth = 62;
-            dataGridViewStudents.Size = new Size(322, 338);
+            dataGridViewStudents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewStudents.Size = new Size(322, 298);
             dataGridViewStudents.TabIndex = 1;
+            dataGridViewStudents.SelectionChanged += DataGridViewStudents_SelectionChanged;
+            // 
+            // panelStudentsButtons
+            // 
+            panelStudentsButtons.Controls.Add(buttonAddStudent);
+            panelStudentsButtons.Controls.Add(buttonEditStudent);
+            panelStudentsButtons.Controls.Add(buttonDeleteStudent);
+            panelStudentsButtons.Dock = DockStyle.Bottom;
+            panelStudentsButtons.Location = new Point(0, 322);
+            panelStudentsButtons.Name = "panelStudentsButtons";
+            panelStudentsButtons.Size = new Size(322, 40);
+            panelStudentsButtons.TabIndex = 2;
+            panelStudentsButtons.Visible = false;
+            // 
+            // buttonAddStudent
+            // 
+            buttonAddStudent.BackColor = Color.LightGreen;
+            buttonAddStudent.Location = new Point(5, 5);
+            buttonAddStudent.Name = "buttonAddStudent";
+            buttonAddStudent.Size = new Size(100, 30);
+            buttonAddStudent.TabIndex = 0;
+            buttonAddStudent.Text = "+ Add";
+            buttonAddStudent.UseVisualStyleBackColor = false;
+            buttonAddStudent.Click += ButtonAddStudent_Click;
+            // 
+            // buttonEditStudent
+            // 
+            buttonEditStudent.BackColor = Color.LightBlue;
+            buttonEditStudent.Enabled = false;
+            buttonEditStudent.Location = new Point(110, 5);
+            buttonEditStudent.Name = "buttonEditStudent";
+            buttonEditStudent.Size = new Size(100, 30);
+            buttonEditStudent.TabIndex = 1;
+            buttonEditStudent.Text = "Edit";
+            buttonEditStudent.UseVisualStyleBackColor = false;
+            buttonEditStudent.Click += ButtonEditStudent_Click;
+            // 
+            // buttonDeleteStudent
+            // 
+            buttonDeleteStudent.BackColor = Color.LightCoral;
+            buttonDeleteStudent.Enabled = false;
+            buttonDeleteStudent.Location = new Point(215, 5);
+            buttonDeleteStudent.Name = "buttonDeleteStudent";
+            buttonDeleteStudent.Size = new Size(100, 30);
+            buttonDeleteStudent.TabIndex = 2;
+            buttonDeleteStudent.Text = "✗ Delete";
+            buttonDeleteStudent.UseVisualStyleBackColor = false;
+            buttonDeleteStudent.Click += ButtonDeleteStudent_Click;
+            // 
+            // contextMenuStripStudents
+            // 
+            contextMenuStripStudents.Items.AddRange(new ToolStripItem[] { addStudentToolStripMenuItem, editStudentToolStripMenuItem, deleteStudentToolStripMenuItem });
+            contextMenuStripStudents.Name = "contextMenuStripStudents";
+            contextMenuStripStudents.Size = new Size(181, 70);
+            // 
+            // addStudentToolStripMenuItem
+            // 
+            addStudentToolStripMenuItem.Name = "addStudentToolStripMenuItem";
+            addStudentToolStripMenuItem.Size = new Size(180, 22);
+            addStudentToolStripMenuItem.Text = "Add Student...";
+            addStudentToolStripMenuItem.Click += AddStudentToolStripMenuItem_Click;
+            // 
+            // editStudentToolStripMenuItem
+            // 
+            editStudentToolStripMenuItem.Name = "editStudentToolStripMenuItem";
+            editStudentToolStripMenuItem.Size = new Size(180, 22);
+            editStudentToolStripMenuItem.Text = "Edit Student...";
+            editStudentToolStripMenuItem.Click += EditStudentToolStripMenuItem_Click;
+            // 
+            // deleteStudentToolStripMenuItem
+            // 
+            deleteStudentToolStripMenuItem.Name = "deleteStudentToolStripMenuItem";
+            deleteStudentToolStripMenuItem.Size = new Size(180, 22);
+            deleteStudentToolStripMenuItem.Text = "Delete Student";
+            deleteStudentToolStripMenuItem.Click += DeleteStudentToolStripMenuItem_Click;
             // 
             // labelStudents
             // 
@@ -371,6 +459,7 @@
             ((System.ComponentModel.ISupportInitialize)dataGridViewUniforms).EndInit();
             panelStudents.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).EndInit();
+            contextMenuStripStudents.ResumeLayout(false);
             panelUsers.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridViewUsers).EndInit();
             contextMenuStripUsers.ResumeLayout(false);
@@ -396,6 +485,14 @@
         private Label labelUniforms;
         private Panel panelStudents;
         private DataGridView dataGridViewStudents;
+        private Panel panelStudentsButtons;
+        private Button buttonAddStudent;
+        private Button buttonEditStudent;
+        private Button buttonDeleteStudent;
+        private ContextMenuStrip contextMenuStripStudents;
+        private ToolStripMenuItem addStudentToolStripMenuItem;
+        private ToolStripMenuItem editStudentToolStripMenuItem;
+        private ToolStripMenuItem deleteStudentToolStripMenuItem;
         private Label labelStudents;
         private Panel panelUsers;
         private DataGridView dataGridViewUsers;

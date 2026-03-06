@@ -124,11 +124,24 @@ namespace Computer_Science_IA___Uniform_Manager
                     dataGridViewStudents.DataSource = result.Students;
                     FormatStudentsGrid();
                     labelStudents.Text = $"Students ({result.TotalCount})";
+                    
+                    // Show management buttons for admins
+                    if (_currentOrganization?.UserAccountLevel == 0)
+                    {
+                        panelStudentsButtons.Visible = true;
+                        dataGridViewStudents.ContextMenuStrip = contextMenuStripStudents;
+                    }
+                    else
+                    {
+                        panelStudentsButtons.Visible = false;
+                        dataGridViewStudents.ContextMenuStrip = null;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading students: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                panelStudentsButtons.Visible = false;
             }
         }
 
@@ -242,6 +255,12 @@ namespace Computer_Science_IA___Uniform_Manager
             if (dataGridViewStudents.Columns.Contains("LastName"))
                 dataGridViewStudents.Columns["LastName"].HeaderText = "Last Name";
             
+            if (dataGridViewStudents.Columns.Contains("FullName"))
+                dataGridViewStudents.Columns["FullName"].Visible = false;
+            
+            if (dataGridViewStudents.Columns.Contains("Grade"))
+                dataGridViewStudents.Columns["Grade"].HeaderText = "Grade";
+            
             if (dataGridViewStudents.Columns.Contains("CreatedDate"))
                 dataGridViewStudents.Columns["CreatedDate"].Visible = false;
             
@@ -309,6 +328,15 @@ namespace Computer_Science_IA___Uniform_Manager
                 buttonChangeUserRole.Enabled = true;
                 buttonRemoveUserFromOrg.Enabled = true;
             }
+        }
+
+        private void DataGridViewStudents_SelectionChanged(object sender, EventArgs e)
+        {
+            if (!panelStudentsButtons.Visible) return;
+
+            bool hasSelection = dataGridViewStudents.SelectedRows.Count > 0;
+            buttonEditStudent.Enabled = hasSelection;
+            buttonDeleteStudent.Enabled = hasSelection;
         }
 
         private async void ButtonChangeUserRole_Click(object sender, EventArgs e)
@@ -490,6 +518,322 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        #region Student Management
+
+        private async void ButtonAddStudent_Click(object sender, EventArgs e)
+        {
+            await AddNewStudent();
+        }
+
+        private async void AddStudentToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AddNewStudent();
+        }
+
+        private async Task AddNewStudent()
+        {
+            using var addForm = new Form();
+            addForm.Text = "Add New Student";
+            addForm.Size = new System.Drawing.Size(400, 300);
+            addForm.StartPosition = FormStartPosition.CenterParent;
+            addForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            addForm.MaximizeBox = false;
+            addForm.MinimizeBox = false;
+
+            var lblStudentId = new Label { Text = "Student ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
+            var txtStudentId = new TextBox { Location = new System.Drawing.Point(130, 18), Size = new System.Drawing.Size(240, 20), CharacterCasing = CharacterCasing.Upper };
+
+            var lblFirstName = new Label { Text = "First Name:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
+            var txtFirstName = new TextBox { Location = new System.Drawing.Point(130, 58), Size = new System.Drawing.Size(240, 20) };
+
+            var lblLastName = new Label { Text = "Last Name:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtLastName = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(240, 20) };
+
+            var lblGrade = new Label { Text = "Grade (1-12):", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 20) };
+            var numGrade = new NumericUpDown { Location = new System.Drawing.Point(130, 138), Size = new System.Drawing.Size(100, 20), Minimum = 1, Maximum = 12, Value = 9 };
+
+            var btnCreate = new Button
+            {
+                Text = "Add Student",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(200, 200),
+                Size = new System.Drawing.Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(20, 200),
+                Size = new System.Drawing.Size(150, 35)
+            };
+
+            addForm.Controls.AddRange(new Control[] { 
+                lblStudentId, txtStudentId,
+                lblFirstName, txtFirstName,
+                lblLastName, txtLastName,
+                lblGrade, numGrade,
+                btnCreate, btnCancel 
+            });
+            addForm.AcceptButton = btnCreate;
+            addForm.CancelButton = btnCancel;
+
+            if (addForm.ShowDialog() == DialogResult.OK)
+            {
+                if (string.IsNullOrWhiteSpace(txtStudentId.Text) || 
+                    string.IsNullOrWhiteSpace(txtFirstName.Text) || 
+                    string.IsNullOrWhiteSpace(txtLastName.Text))
+                {
+                    MessageBox.Show("Please fill in all required fields.", "Validation Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                await CreateStudentAsync(txtStudentId.Text.Trim(), txtFirstName.Text.Trim(), 
+                    txtLastName.Text.Trim(), (int)numGrade.Value);
+            }
+        }
+
+        private async Task CreateStudentAsync(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new CreateStudentRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    StudentIdentifier = studentId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{firstName} {lastName}' added successfully!", 
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error adding student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonEditStudent_Click(object sender, EventArgs e)
+        {
+            await EditSelectedStudent();
+        }
+
+        private async void EditStudentToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await EditSelectedStudent();
+        }
+
+        private async Task EditSelectedStudent()
+        {
+            if (dataGridViewStudents.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewStudents.SelectedRows[0];
+            string studentId = selectedRow.Cells["StudentIdentifier"].Value.ToString()!;
+            string firstName = selectedRow.Cells["FirstName"].Value.ToString()!;
+            string lastName = selectedRow.Cells["LastName"].Value.ToString()!;
+            int grade = Convert.ToInt32(selectedRow.Cells["Grade"].Value);
+
+            using var editForm = new Form();
+            editForm.Text = $"Edit Student - {firstName} {lastName}";
+            editForm.Size = new System.Drawing.Size(400, 300);
+            editForm.StartPosition = FormStartPosition.CenterParent;
+            editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            editForm.MaximizeBox = false;
+            editForm.MinimizeBox = false;
+
+            var lblStudentId = new Label { Text = "Student ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
+            var txtStudentId = new TextBox { 
+                Location = new System.Drawing.Point(130, 18), 
+                Size = new System.Drawing.Size(240, 20), 
+                Text = studentId,
+                ReadOnly = true,
+                BackColor = System.Drawing.SystemColors.Control
+            };
+
+            var lblFirstName = new Label { Text = "First Name:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
+            var txtFirstName = new TextBox { Location = new System.Drawing.Point(130, 58), Size = new System.Drawing.Size(240, 20), Text = firstName };
+
+            var lblLastName = new Label { Text = "Last Name:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtLastName = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(240, 20), Text = lastName };
+
+            var lblGrade = new Label { Text = "Grade (1-12):", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 20) };
+            var numGrade = new NumericUpDown { Location = new System.Drawing.Point(130, 138), Size = new System.Drawing.Size(100, 20), Minimum = 1, Maximum = 12, Value = grade };
+
+            var btnSave = new Button
+            {
+                Text = "Save Changes",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(200, 200),
+                Size = new System.Drawing.Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(20, 200),
+                Size = new System.Drawing.Size(150, 35)
+            };
+
+            editForm.Controls.AddRange(new Control[] { 
+                lblStudentId, txtStudentId,
+                lblFirstName, txtFirstName,
+                lblLastName, txtLastName,
+                lblGrade, numGrade,
+                btnSave, btnCancel 
+            });
+            editForm.AcceptButton = btnSave;
+            editForm.CancelButton = btnCancel;
+
+            if (editForm.ShowDialog() == DialogResult.OK)
+            {
+                if (string.IsNullOrWhiteSpace(txtFirstName.Text) || string.IsNullOrWhiteSpace(txtLastName.Text))
+                {
+                    MessageBox.Show("First name and last name are required.", "Validation Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                await UpdateStudentAsync(studentId, txtFirstName.Text.Trim(), txtLastName.Text.Trim(), (int)numGrade.Value);
+            }
+        }
+
+        private async Task UpdateStudentAsync(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new UpdateStudentRequest
+                {
+                    StudentIdentifier = studentId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PutAsync($"{API_BASE_URL}/UpdateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{firstName} {lastName}' updated successfully!", 
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error updating student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void ButtonDeleteStudent_Click(object sender, EventArgs e)
+        {
+            await DeleteSelectedStudent();
+        }
+
+        private async void DeleteStudentToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await DeleteSelectedStudent();
+        }
+
+        private async Task DeleteSelectedStudent()
+        {
+            if (dataGridViewStudents.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewStudents.SelectedRows[0];
+            string studentId = selectedRow.Cells["StudentIdentifier"].Value.ToString()!
+;
+            string firstName = selectedRow.Cells["FirstName"].Value.ToString()!;
+            string lastName = selectedRow.Cells["LastName"].Value.ToString()!;
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to delete student '{firstName} {lastName}' (ID: {studentId})?\n\n" +
+                $"This action cannot be undone.\n" +
+                $"Any uniforms assigned to this student will be unassigned.",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            await DeleteStudentAsync(studentId, $"{firstName} {lastName}");
+        }
+
+        private async Task DeleteStudentAsync(string studentId, string studentName)
+        {
+            try
+            {
+                var response = await httpClient.DeleteAsync(
+                    $"{API_BASE_URL}/students/{studentId}?userId={_currentUser!.UserId}");
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{studentName}' deleted successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error deleting student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
+
         private async void SwitchOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var orgSelector = new OrganizationSelectorForm(_currentUser!);
@@ -603,7 +947,10 @@ namespace Computer_Science_IA___Uniform_Manager
             public string StudentIdentifier { get; set; } = string.Empty;
             public string FirstName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
             public int Grade { get; set; }
+            public DateTime CreatedDate { get; set; }
+            public DateTime? LastModified { get; set; }
         }
 
         private class UserDto
@@ -655,6 +1002,32 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             public bool Success { get; set; }
             public string Message { get; set; } = string.Empty;
+        }
+
+        private class CreateStudentRequest
+        {
+            public int OrganizationId { get; set; }
+            public string StudentIdentifier { get; set; } = string.Empty;
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public int Grade { get; set; }
+            public int RequestingUserId { get; set; }
+        }
+
+        private class UpdateStudentRequest
+        {
+            public string StudentIdentifier { get; set; } = string.Empty;
+            public string? FirstName { get; set; }
+            public string? LastName { get; set; }
+            public int? Grade { get; set; }
+            public int RequestingUserId { get; set; }
+        }
+
+        private class StudentResponse
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public StudentDto? Student { get; set; }
         }
     }
 }

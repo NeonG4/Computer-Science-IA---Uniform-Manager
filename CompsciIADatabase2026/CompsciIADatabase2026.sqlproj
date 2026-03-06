@@ -58,10 +58,18 @@
   </ItemGroup>
   <ItemGroup>
     <Build Include="00_CompleteSetup.sql" />
+    <Build Include="AddOrganizationIdToStudents.sql" />
+    <Build Include="CompleteSetupWithOrganizations.sql" />
+    <Build Include="FreshSetup.sql" />
+    <Build Include="ForceFreshSetup.sql" />
+    <Build Include="VerifyDatabase.sql" />
+    <Build Include="SimpleReset.sql" />
+    <Build Include="UltimateReset.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RunSetup.ps1" />
     <None Include="SetupAzureDatabase.ps1" />
     <None Include="UpdateConnectionStrings.ps1" />
+    <None Include="DeleteOrphanedFiles.ps1" />
   </ItemGroup>
 </Project>
