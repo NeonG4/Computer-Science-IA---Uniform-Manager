@@ -22,12 +22,12 @@ namespace Computer_Science_IA___Uniform_Manager
             listBoxOrganizations = new ListBox();
             buttonSelect = new Button();
             buttonCreateOrg = new Button();
+            buttonJoinOrg = new Button();
             buttonRefresh = new Button();
             buttonLogout = new Button();
             labelUserInfo = new Label();
             panelHeader = new Panel();
             panelFooter = new Panel();
-            buttonJohnOrg = new Button();
             panelHeader.SuspendLayout();
             panelFooter.SuspendLayout();
             SuspendLayout();
@@ -72,10 +72,10 @@ namespace Computer_Science_IA___Uniform_Manager
             // buttonSelect
             // 
             buttonSelect.Font = new Font("Segoe UI", 12F);
-            buttonSelect.Location = new Point(246, 252);
+            buttonSelect.Location = new Point(280, 252);
             buttonSelect.Margin = new Padding(2, 2, 2, 2);
             buttonSelect.Name = "buttonSelect";
-            buttonSelect.Size = new Size(140, 27);
+            buttonSelect.Size = new Size(106, 27);
             buttonSelect.TabIndex = 3;
             buttonSelect.Text = "Select";
             buttonSelect.UseVisualStyleBackColor = true;
@@ -83,24 +83,36 @@ namespace Computer_Science_IA___Uniform_Manager
             // 
             // buttonCreateOrg
             // 
-            buttonCreateOrg.Font = new Font("Segoe UI", 11F);
-            buttonCreateOrg.Location = new Point(35, 6);
+            buttonCreateOrg.Font = new Font("Segoe UI", 10F);
+            buttonCreateOrg.Location = new Point(10, 6);
             buttonCreateOrg.Margin = new Padding(2, 2, 2, 2);
             buttonCreateOrg.Name = "buttonCreateOrg";
-            buttonCreateOrg.Size = new Size(138, 27);
+            buttonCreateOrg.Size = new Size(95, 27);
             buttonCreateOrg.TabIndex = 4;
-            buttonCreateOrg.Text = "Create New Org";
+            buttonCreateOrg.Text = "Create New";
             buttonCreateOrg.UseVisualStyleBackColor = true;
             buttonCreateOrg.Click += ButtonCreateOrg_Click;
             // 
+            // buttonJoinOrg
+            // 
+            buttonJoinOrg.Font = new Font("Segoe UI", 10F);
+            buttonJoinOrg.Location = new Point(110, 6);
+            buttonJoinOrg.Margin = new Padding(2, 2, 2, 2);
+            buttonJoinOrg.Name = "buttonJoinOrg";
+            buttonJoinOrg.Size = new Size(95, 27);
+            buttonJoinOrg.TabIndex = 5;
+            buttonJoinOrg.Text = "Join Existing";
+            buttonJoinOrg.UseVisualStyleBackColor = true;
+            buttonJoinOrg.Click += ButtonJoinOrg_Click;
+            // 
             // buttonRefresh
             // 
-            buttonRefresh.Font = new Font("Segoe UI", 11F);
-            buttonRefresh.Location = new Point(246, 6);
+            buttonRefresh.Font = new Font("Segoe UI", 10F);
+            buttonRefresh.Location = new Point(315, 6);
             buttonRefresh.Margin = new Padding(2, 2, 2, 2);
             buttonRefresh.Name = "buttonRefresh";
-            buttonRefresh.Size = new Size(138, 27);
-            buttonRefresh.TabIndex = 5;
+            buttonRefresh.Size = new Size(95, 27);
+            buttonRefresh.TabIndex = 6;
             buttonRefresh.Text = "Refresh";
             buttonRefresh.UseVisualStyleBackColor = true;
             buttonRefresh.Click += ButtonRefresh_Click;
@@ -142,26 +154,14 @@ namespace Computer_Science_IA___Uniform_Manager
             // panelFooter
             // 
             panelFooter.Controls.Add(buttonCreateOrg);
+            panelFooter.Controls.Add(buttonJoinOrg);
             panelFooter.Controls.Add(buttonRefresh);
-            panelFooter.Controls.Add(buttonSelect);
             panelFooter.Dock = DockStyle.Bottom;
             panelFooter.Location = new Point(0, 295);
             panelFooter.Margin = new Padding(2, 2, 2, 2);
             panelFooter.Name = "panelFooter";
             panelFooter.Size = new Size(420, 48);
             panelFooter.TabIndex = 8;
-            // 
-            // buttonJohnOrg
-            // 
-            buttonJohnOrg.Font = new Font("Segoe UI", 11F);
-            buttonJohnOrg.Location = new Point(246, 6);
-            buttonJohnOrg.Margin = new Padding(2);
-            buttonJohnOrg.Name = "buttonJohnOrg";
-            buttonJohnOrg.Size = new Size(138, 27);
-            buttonJohnOrg.TabIndex = 5;
-            buttonJohnOrg.Text = "Join Org";
-            buttonJohnOrg.UseVisualStyleBackColor = true;
-            buttonJohnOrg.Click += buttonJohnOrg_Click;
             // 
             // OrganizationSelectorForm
             // 
@@ -195,11 +195,11 @@ namespace Computer_Science_IA___Uniform_Manager
         private System.Windows.Forms.ListBox listBoxOrganizations;
         private System.Windows.Forms.Button buttonSelect;
         private System.Windows.Forms.Button buttonCreateOrg;
+        private System.Windows.Forms.Button buttonJoinOrg;
         private System.Windows.Forms.Button buttonRefresh;
         private System.Windows.Forms.Button buttonLogout;
         private System.Windows.Forms.Label labelUserInfo;
         private System.Windows.Forms.Panel panelHeader;
         private System.Windows.Forms.Panel panelFooter;
-        private Button buttonJohnOrg;
     }
 }

@@ -32,6 +32,8 @@
             homeToolStripMenuItem = new ToolStripMenuItem();
             navigateToolStripMenuItem = new ToolStripMenuItem();
             fileToolStripMenuItem = new ToolStripMenuItem();
+            importUniformsToolStripMenuItem = new ToolStripMenuItem();
+            importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
             switchOrganizationToolStripMenuItem = new ToolStripMenuItem();
@@ -43,6 +45,19 @@
             tableLayoutPanel1 = new TableLayoutPanel();
             panelUniforms = new Panel();
             dataGridViewUniforms = new DataGridView();
+            panelUniformsButtons = new Panel();
+            buttonAddUniform = new Button();
+            buttonEditUniform = new Button();
+            buttonDeleteUniform = new Button();
+            buttonCheckOutUniform = new Button();
+            buttonUpdateConditions = new Button();
+            contextMenuStripUniforms = new ContextMenuStrip();
+            addUniformToolStripMenuItem = new ToolStripMenuItem();
+            editUniformToolStripMenuItem = new ToolStripMenuItem();
+            deleteUniformToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            checkOutInToolStripMenuItem = new ToolStripMenuItem();
+            updateConditionsToolStripMenuItem = new ToolStripMenuItem();
             labelUniforms = new Label();
             panelStudents = new Panel();
             dataGridViewStudents = new DataGridView();
@@ -72,6 +87,7 @@
             panelStudents.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).BeginInit();
             contextMenuStripStudents.SuspendLayout();
+            contextMenuStripUniforms.SuspendLayout();
             panelUsers.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewUsers).BeginInit();
             contextMenuStripUsers.SuspendLayout();
@@ -102,9 +118,24 @@
             // 
             // fileToolStripMenuItem
             // 
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { importUniformsToolStripMenuItem, importStudentsToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(37, 22);
             fileToolStripMenuItem.Text = "File";
+            // 
+            // importUniformsToolStripMenuItem
+            // 
+            importUniformsToolStripMenuItem.Name = "importUniformsToolStripMenuItem";
+            importUniformsToolStripMenuItem.Size = new Size(180, 22);
+            importUniformsToolStripMenuItem.Text = "Import Uniforms...";
+            importUniformsToolStripMenuItem.Click += ImportUniformsToolStripMenuItem_Click;
+            // 
+            // importStudentsToolStripMenuItem
+            // 
+            importStudentsToolStripMenuItem.Name = "importStudentsToolStripMenuItem";
+            importStudentsToolStripMenuItem.Size = new Size(180, 22);
+            importStudentsToolStripMenuItem.Text = "Import Students...";
+            importStudentsToolStripMenuItem.Click += ImportStudentsToolStripMenuItem_Click;
             // 
             // editToolStripMenuItem
             // 
@@ -180,6 +211,7 @@
             // panelUniforms
             // 
             panelUniforms.Controls.Add(dataGridViewUniforms);
+            panelUniforms.Controls.Add(panelUniformsButtons);
             panelUniforms.Controls.Add(labelUniforms);
             panelUniforms.Dock = DockStyle.Fill;
             panelUniforms.Location = new Point(2, 2);
@@ -194,27 +226,137 @@
             dataGridViewUniforms.AllowUserToDeleteRows = false;
             dataGridViewUniforms.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridViewUniforms.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewUniforms.ContextMenuStrip = contextMenuStripUniforms;
             dataGridViewUniforms.Dock = DockStyle.Fill;
             dataGridViewUniforms.Location = new Point(0, 24);
             dataGridViewUniforms.Margin = new Padding(2, 2, 2, 2);
+            dataGridViewUniforms.MultiSelect = false;
             dataGridViewUniforms.Name = "dataGridViewUniforms";
             dataGridViewUniforms.ReadOnly = true;
             dataGridViewUniforms.RowHeadersWidth = 62;
-            dataGridViewUniforms.Size = new Size(322, 338);
+            dataGridViewUniforms.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewUniforms.Size = new Size(322, 268);
             dataGridViewUniforms.TabIndex = 1;
+            dataGridViewUniforms.SelectionChanged += DataGridViewUniforms_SelectionChanged;
             // 
-            // labelUniforms
+            // panelUniformsButtons
             // 
-            labelUniforms.BackColor = SystemColors.ControlDark;
-            labelUniforms.Dock = DockStyle.Top;
-            labelUniforms.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            labelUniforms.Location = new Point(0, 0);
-            labelUniforms.Margin = new Padding(2, 0, 2, 0);
-            labelUniforms.Name = "labelUniforms";
-            labelUniforms.Size = new Size(322, 24);
-            labelUniforms.TabIndex = 0;
-            labelUniforms.Text = "Uniforms";
-            labelUniforms.TextAlign = ContentAlignment.MiddleCenter;
+            panelUniformsButtons.Controls.Add(buttonAddUniform);
+            panelUniformsButtons.Controls.Add(buttonEditUniform);
+            panelUniformsButtons.Controls.Add(buttonDeleteUniform);
+            panelUniformsButtons.Controls.Add(buttonCheckOutUniform);
+            panelUniformsButtons.Controls.Add(buttonUpdateConditions);
+            panelUniformsButtons.Dock = DockStyle.Bottom;
+            panelUniformsButtons.Location = new Point(0, 292);
+            panelUniformsButtons.Name = "panelUniformsButtons";
+            panelUniformsButtons.Size = new Size(322, 70);
+            panelUniformsButtons.TabIndex = 2;
+            panelUniformsButtons.Visible = false;
+            // 
+            // buttonAddUniform
+            // 
+            buttonAddUniform.BackColor = Color.LightGreen;
+            buttonAddUniform.Location = new Point(5, 5);
+            buttonAddUniform.Name = "buttonAddUniform";
+            buttonAddUniform.Size = new Size(100, 28);
+            buttonAddUniform.TabIndex = 0;
+            buttonAddUniform.Text = "+ Add";
+            buttonAddUniform.UseVisualStyleBackColor = false;
+            buttonAddUniform.Click += ButtonAddUniform_Click;
+            // 
+            // buttonEditUniform
+            // 
+            buttonEditUniform.BackColor = Color.LightBlue;
+            buttonEditUniform.Enabled = false;
+            buttonEditUniform.Location = new Point(110, 5);
+            buttonEditUniform.Name = "buttonEditUniform";
+            buttonEditUniform.Size = new Size(100, 28);
+            buttonEditUniform.TabIndex = 1;
+            buttonEditUniform.Text = "Edit";
+            buttonEditUniform.UseVisualStyleBackColor = false;
+            buttonEditUniform.Click += ButtonEditUniform_Click;
+            // 
+            // buttonDeleteUniform
+            // 
+            buttonDeleteUniform.BackColor = Color.LightCoral;
+            buttonDeleteUniform.Enabled = false;
+            buttonDeleteUniform.Location = new Point(215, 5);
+            buttonDeleteUniform.Name = "buttonDeleteUniform";
+            buttonDeleteUniform.Size = new Size(100, 28);
+            buttonDeleteUniform.TabIndex = 2;
+            buttonDeleteUniform.Text = "✗ Delete";
+            buttonDeleteUniform.UseVisualStyleBackColor = false;
+            buttonDeleteUniform.Click += ButtonDeleteUniform_Click;
+            // 
+            // buttonCheckOutUniform
+            // 
+            buttonCheckOutUniform.BackColor = Color.LightYellow;
+            buttonCheckOutUniform.Enabled = false;
+            buttonCheckOutUniform.Location = new Point(5, 37);
+            buttonCheckOutUniform.Name = "buttonCheckOutUniform";
+            buttonCheckOutUniform.Size = new Size(155, 28);
+            buttonCheckOutUniform.TabIndex = 3;
+            buttonCheckOutUniform.Text = "Check Out/In";
+            buttonCheckOutUniform.UseVisualStyleBackColor = false;
+            buttonCheckOutUniform.Click += ButtonCheckOutUniform_Click;
+            // 
+            // buttonUpdateConditions
+            // 
+            buttonUpdateConditions.BackColor = Color.LightGoldenrodYellow;
+            buttonUpdateConditions.Enabled = false;
+            buttonUpdateConditions.Location = new Point(165, 37);
+            buttonUpdateConditions.Name = "buttonUpdateConditions";
+            buttonUpdateConditions.Size = new Size(150, 28);
+            buttonUpdateConditions.TabIndex = 4;
+            buttonUpdateConditions.Text = "Update Conditions";
+            buttonUpdateConditions.UseVisualStyleBackColor = false;
+            buttonUpdateConditions.Click += ButtonUpdateConditions_Click;
+            // 
+            // contextMenuStripUniforms
+            // 
+            contextMenuStripUniforms.Items.AddRange(new ToolStripItem[] { addUniformToolStripMenuItem, editUniformToolStripMenuItem, deleteUniformToolStripMenuItem, toolStripSeparator2, checkOutInToolStripMenuItem, updateConditionsToolStripMenuItem });
+            contextMenuStripUniforms.Name = "contextMenuStripUniforms";
+            contextMenuStripUniforms.Size = new Size(181, 120);
+            // 
+            // addUniformToolStripMenuItem
+            // 
+            addUniformToolStripMenuItem.Name = "addUniformToolStripMenuItem";
+            addUniformToolStripMenuItem.Size = new Size(180, 22);
+            addUniformToolStripMenuItem.Text = "Add Uniform...";
+            addUniformToolStripMenuItem.Click += AddUniformToolStripMenuItem_Click;
+            // 
+            // editUniformToolStripMenuItem
+            // 
+            editUniformToolStripMenuItem.Name = "editUniformToolStripMenuItem";
+            editUniformToolStripMenuItem.Size = new Size(180, 22);
+            editUniformToolStripMenuItem.Text = "Edit Uniform...";
+            editUniformToolStripMenuItem.Click += EditUniformToolStripMenuItem_Click;
+            // 
+            // deleteUniformToolStripMenuItem
+            // 
+            deleteUniformToolStripMenuItem.Name = "deleteUniformToolStripMenuItem";
+            deleteUniformToolStripMenuItem.Size = new Size(180, 22);
+            deleteUniformToolStripMenuItem.Text = "Delete Uniform";
+            deleteUniformToolStripMenuItem.Click += DeleteUniformToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(177, 6);
+            // 
+            // checkOutInToolStripMenuItem
+            // 
+            checkOutInToolStripMenuItem.Name = "checkOutInToolStripMenuItem";
+            checkOutInToolStripMenuItem.Size = new Size(180, 22);
+            checkOutInToolStripMenuItem.Text = "Check Out/In...";
+            checkOutInToolStripMenuItem.Click += CheckOutInToolStripMenuItem_Click;
+            // 
+            // updateConditionsToolStripMenuItem
+            // 
+            updateConditionsToolStripMenuItem.Name = "updateConditionsToolStripMenuItem";
+            updateConditionsToolStripMenuItem.Size = new Size(180, 22);
+            updateConditionsToolStripMenuItem.Text = "Update Conditions...";
+            updateConditionsToolStripMenuItem.Click += UpdateConditionsToolStripMenuItem_Click;
             // 
             // panelStudents
             // 
@@ -460,6 +602,7 @@
             panelStudents.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).EndInit();
             contextMenuStripStudents.ResumeLayout(false);
+            contextMenuStripUniforms.ResumeLayout(false);
             panelUsers.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridViewUsers).EndInit();
             contextMenuStripUsers.ResumeLayout(false);
@@ -482,6 +625,19 @@
         private TableLayoutPanel tableLayoutPanel1;
         private Panel panelUniforms;
         private DataGridView dataGridViewUniforms;
+        private Panel panelUniformsButtons;
+        private Button buttonAddUniform;
+        private Button buttonEditUniform;
+        private Button buttonDeleteUniform;
+        private Button buttonCheckOutUniform;
+        private Button buttonUpdateConditions;
+        private ContextMenuStrip contextMenuStripUniforms;
+        private ToolStripMenuItem addUniformToolStripMenuItem;
+        private ToolStripMenuItem editUniformToolStripMenuItem;
+        private ToolStripMenuItem deleteUniformToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem checkOutInToolStripMenuItem;
+        private ToolStripMenuItem updateConditionsToolStripMenuItem;
         private Label labelUniforms;
         private Panel panelStudents;
         private DataGridView dataGridViewStudents;
@@ -506,5 +662,7 @@
         private ToolStripMenuItem userToolStripMenuItem;
         private ToolStripMenuItem manageJoinRequestsToolStripMenuItem;
         private ToolStripMenuItem manageUsersToolStripMenuItem;
+        private ToolStripMenuItem importUniformsToolStripMenuItem;
+        private ToolStripMenuItem importStudentsToolStripMenuItem;
     }
 }

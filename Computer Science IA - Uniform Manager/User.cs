@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Computer_Science_IA___Uniform_Manager
 {
     /// <summary>
-    /// Represents a user account in the system
+    /// An account in the system
     /// </summary>
     public class User
     {
@@ -55,11 +55,6 @@ namespace Computer_Science_IA___Uniform_Manager
             
             user.AccountLevel = newLevel;
             return true;
-        }
-
-        public void SetAccountLevel(AccountLevel level)
-        {
-            AccountLevel = level;
         }
 
         public bool HasPermission(AccountLevel requiredLevel)

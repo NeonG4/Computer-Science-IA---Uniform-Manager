@@ -225,6 +225,9 @@ namespace CompsciAzureFunctionAPI2026
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                
+                _logger.LogInformation("Request body: {Body}", requestBody);
+                
                 var request = JsonSerializer.Deserialize<CreateUniformRequest>(requestBody, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -248,22 +251,43 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Check Admin permission
-                var accountLevel = await _authService.GetUserAccountLevel(connection, request.RequestingUserId);
-                if (!_authService.CanFullyModifyUniform(accountLevel))
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
                 {
-                    return new ForbidResult(new UniformResponse
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
                     {
                         Success = false,
                         Message = "Only administrators can create uniforms."
-                    }.Message);
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
                 }
 
                 // Check if uniform already exists
                 await using var checkCmd = new SqlCommand(
-                    "SELECT COUNT(*) FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    "SELECT COUNT(*) FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id AND OrganizationId = @OrgId",
                     connection);
                 checkCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                checkCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
 
                 if ((int)(await checkCmd.ExecuteScalarAsync() ?? 0) > 0)
                 {
@@ -310,7 +334,14 @@ namespace CompsciAzureFunctionAPI2026
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating uniform.");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new ObjectResult(new UniformResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred: {ex.Message}"
+                })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
             }
         }
 
@@ -344,10 +375,53 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                var accountLevel = await _authService.GetUserAccountLevel(connection, request.RequestingUserId);
-                if (!_authService.CanFullyModifyUniform(accountLevel))
+                // Get the uniform's organization ID first
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                var orgResult = await getOrgCmd.ExecuteScalarAsync();
+                if (orgResult == null)
                 {
-                    return new ForbidResult("Only administrators can update uniform details.");
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = (int)orgResult;
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can update uniform details."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
                 }
 
                 // Build dynamic update query
@@ -435,10 +509,53 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                var accountLevel = await _authService.GetUserAccountLevel(connection, userId);
-                if (!_authService.CanFullyModifyUniform(accountLevel))
+                // Get the uniform's organization ID first
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", id);
+
+                var orgResult = await getOrgCmd.ExecuteScalarAsync();
+                if (orgResult == null)
                 {
-                    return new ForbidResult("Only administrators can delete uniforms.");
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = (int)orgResult;
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", userId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can delete uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
                 }
 
                 await using var cmd = new SqlCommand(
@@ -504,10 +621,53 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                var accountLevel = await _authService.GetUserAccountLevel(connection, request.RequestingUserId);
-                if (!_authService.CanModifyCheckOutAndConditions(accountLevel))
+                // Get the uniform's organization ID first
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                var orgResult = await getOrgCmd.ExecuteScalarAsync();
+                if (orgResult == null)
                 {
-                    return new ForbidResult("You do not have permission to check out uniforms.");
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = (int)orgResult;
+
+                // Check User or Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel > 1) // 0 = Admin, 1 = User (both can check out)
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have permission to check out uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
                 }
 
                 // Update check out status
@@ -583,10 +743,53 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                var accountLevel = await _authService.GetUserAccountLevel(connection, request.RequestingUserId);
-                if (!_authService.CanModifyCheckOutAndConditions(accountLevel))
+                // Get the uniform's organization ID first
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                var orgResult = await getOrgCmd.ExecuteScalarAsync();
+                if (orgResult == null)
                 {
-                    return new ForbidResult("You do not have permission to update uniform conditions.");
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = (int)orgResult;
+
+                // Check User or Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel > 1) // 0 = Admin, 1 = User (both can update conditions)
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have permission to update uniform conditions."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
                 }
 
                 // Convert conditions to JSON

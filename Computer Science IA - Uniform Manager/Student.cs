@@ -3,7 +3,7 @@
 namespace Computer_Science_IA___Uniform_Manager
 {
     /// <summary>
-    /// Represents a student in the uniform management system
+    /// A student in the org
     /// </summary>
     public class Student
     {

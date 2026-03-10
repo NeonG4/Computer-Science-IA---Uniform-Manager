@@ -112,6 +112,9 @@ namespace Computer_Science_IA___Uniform_Manager
     /// <summary>
     /// Types of uniform clothing items
     /// </summary>
+    // Note to future developers: it might be a good idea to make this a class
+    // which would allow for more properties, such as a broader range of clothing
+    // types, or even more flexibility outside of clothes (accessories, shoes, etc)
     public enum UniformClothing
     {
         ConcertCoat,

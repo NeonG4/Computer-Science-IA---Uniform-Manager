@@ -131,7 +131,9 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 if (result != null && result.Success)
                 {
-                    MessageBox.Show("Your Account is created. Please login now.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Store credentials for auto-login
+                    string username = textBoxUsernameCreate.Text;
+                    string password = textBoxPasswordCreate.Text;
                     
                     // Clear form fields
                     textBoxFirstNameCreate.Clear();
@@ -140,6 +142,12 @@ namespace Computer_Science_IA___Uniform_Manager
                     textBoxUsernameCreate.Clear();
                     textBoxPasswordCreate.Clear();
                     textBoxConfirmPasswordCreate.Clear();
+                    
+                    MessageBox.Show("Your account has been created successfully!\n\nLogging you in...", 
+                        "Account Created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
+                    // Automatically log in the user
+                    await AutoLoginAsync(username, password);
                 }
                 else
                 {
@@ -153,6 +161,59 @@ namespace Computer_Science_IA___Uniform_Manager
             catch (Exception ex)
             {
                 MessageBox.Show($"Error creating account: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task AutoLoginAsync(string username, string password)
+        {
+            try
+            {
+                var loginRequest = new
+                {
+                    Username = username,
+                    Password = password
+                };
+
+                var jsonContent = JsonSerializer.Serialize(loginRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/Login", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                
+                var result = JsonSerializer.Deserialize<LoginResponse>(responseBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result != null && result.Success)
+                {
+                    this.Hide();
+                    
+                    // Show organization selector
+                    var orgSelector = new OrganizationSelectorForm(result.User!);
+                    var dialogResult = orgSelector.ShowDialog();
+                    
+                    if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                    {
+                        // Open main form with selected organization
+                        UniformManagerAdminHome home = new UniformManagerAdminHome(
+                            result.User!, 
+                            orgSelector.SelectedOrganization);
+                        home.ShowDialog();
+                    }
+                    
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show("Account created but automatic login failed. Please log in manually.", 
+                        "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Account created but automatic login failed: {ex.Message}\n\nPlease log in manually.", 
+                    "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

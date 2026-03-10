@@ -188,6 +188,21 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        private async void ButtonJoinOrg_Click(object sender, EventArgs e)
+        {
+            var joinOrgForm = new JoinOrganizationForm(_currentUser);
+            if (joinOrgForm.ShowDialog() == DialogResult.OK)
+            {
+                // Show success message with instructions
+                MessageBox.Show("Your request has been sent to the organization administrators for approval.\n\n" +
+                    "Click 'Refresh' once your request is approved to see the organization in the list.",
+                    "Request Sent", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                
+                // Reload organizations in case it was auto-approved
+                await LoadOrganizationsAsync();
+            }
+        }
+
         private async void ButtonRefresh_Click(object sender, EventArgs e)
         {
             await LoadOrganizationsAsync();
@@ -206,17 +221,6 @@ namespace Computer_Science_IA___Uniform_Manager
             public string Message { get; set; } = string.Empty;
             public List<OrganizationDto>? Organizations { get; set; }
             public int TotalCount { get; set; }
-        }
-
-        private async void buttonJohnOrg_Click(object sender, EventArgs e)
-        {
-            var createOrgForm = new JoinOrganizationForm(_currentUser);
-            if (createOrgForm.ShowDialog() == DialogResult.OK)
-            {
-                // Reload organizations after creating a new one
-                await LoadOrganizationsAsync();
-                buttonSelect.Enabled = true;
-            }
         }
     }
 }
