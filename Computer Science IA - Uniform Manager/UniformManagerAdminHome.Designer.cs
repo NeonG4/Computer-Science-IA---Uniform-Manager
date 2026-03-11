@@ -49,6 +49,8 @@
             buttonAddUniform = new Button();
             buttonEditUniform = new Button();
             buttonDeleteUniform = new Button();
+            buttonAssignUniform = new Button();
+            buttonUnassignUniform = new Button();
             buttonCheckOutUniform = new Button();
             buttonUpdateConditions = new Button();
             contextMenuStripUniforms = new ContextMenuStrip();
@@ -56,6 +58,9 @@
             editUniformToolStripMenuItem = new ToolStripMenuItem();
             deleteUniformToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator2 = new ToolStripSeparator();
+            assignUniformToolStripMenuItem = new ToolStripMenuItem();
+            unassignUniformToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator3 = new ToolStripSeparator();
             checkOutInToolStripMenuItem = new ToolStripMenuItem();
             updateConditionsToolStripMenuItem = new ToolStripMenuItem();
             labelUniforms = new Label();
@@ -235,7 +240,7 @@
             dataGridViewUniforms.ReadOnly = true;
             dataGridViewUniforms.RowHeadersWidth = 62;
             dataGridViewUniforms.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridViewUniforms.Size = new Size(322, 268);
+            dataGridViewUniforms.Size = new Size(322, 238);
             dataGridViewUniforms.TabIndex = 1;
             dataGridViewUniforms.SelectionChanged += DataGridViewUniforms_SelectionChanged;
             // 
@@ -244,12 +249,14 @@
             panelUniformsButtons.Controls.Add(buttonAddUniform);
             panelUniformsButtons.Controls.Add(buttonEditUniform);
             panelUniformsButtons.Controls.Add(buttonDeleteUniform);
+            panelUniformsButtons.Controls.Add(buttonAssignUniform);
+            panelUniformsButtons.Controls.Add(buttonUnassignUniform);
             panelUniformsButtons.Controls.Add(buttonCheckOutUniform);
             panelUniformsButtons.Controls.Add(buttonUpdateConditions);
             panelUniformsButtons.Dock = DockStyle.Bottom;
-            panelUniformsButtons.Location = new Point(0, 292);
+            panelUniformsButtons.Location = new Point(0, 262);
             panelUniformsButtons.Name = "panelUniformsButtons";
-            panelUniformsButtons.Size = new Size(322, 70);
+            panelUniformsButtons.Size = new Size(322, 100);
             panelUniformsButtons.TabIndex = 2;
             panelUniformsButtons.Visible = false;
             // 
@@ -288,11 +295,35 @@
             buttonDeleteUniform.UseVisualStyleBackColor = false;
             buttonDeleteUniform.Click += ButtonDeleteUniform_Click;
             // 
+            // buttonAssignUniform
+            // 
+            buttonAssignUniform.BackColor = Color.LightSkyBlue;
+            buttonAssignUniform.Enabled = false;
+            buttonAssignUniform.Location = new Point(5, 37);
+            buttonAssignUniform.Name = "buttonAssignUniform";
+            buttonAssignUniform.Size = new Size(155, 28);
+            buttonAssignUniform.TabIndex = 5;
+            buttonAssignUniform.Text = "Assign to Student";
+            buttonAssignUniform.UseVisualStyleBackColor = false;
+            buttonAssignUniform.Click += ButtonAssignUniform_Click;
+            // 
+            // buttonUnassignUniform
+            // 
+            buttonUnassignUniform.BackColor = Color.LightSalmon;
+            buttonUnassignUniform.Enabled = false;
+            buttonUnassignUniform.Location = new Point(165, 37);
+            buttonUnassignUniform.Name = "buttonUnassignUniform";
+            buttonUnassignUniform.Size = new Size(150, 28);
+            buttonUnassignUniform.TabIndex = 6;
+            buttonUnassignUniform.Text = "Unassign Student";
+            buttonUnassignUniform.UseVisualStyleBackColor = false;
+            buttonUnassignUniform.Click += ButtonUnassignUniform_Click;
+            // 
             // buttonCheckOutUniform
             // 
             buttonCheckOutUniform.BackColor = Color.LightYellow;
             buttonCheckOutUniform.Enabled = false;
-            buttonCheckOutUniform.Location = new Point(5, 37);
+            buttonCheckOutUniform.Location = new Point(5, 69);
             buttonCheckOutUniform.Name = "buttonCheckOutUniform";
             buttonCheckOutUniform.Size = new Size(155, 28);
             buttonCheckOutUniform.TabIndex = 3;
@@ -304,7 +335,7 @@
             // 
             buttonUpdateConditions.BackColor = Color.LightGoldenrodYellow;
             buttonUpdateConditions.Enabled = false;
-            buttonUpdateConditions.Location = new Point(165, 37);
+            buttonUpdateConditions.Location = new Point(165, 69);
             buttonUpdateConditions.Name = "buttonUpdateConditions";
             buttonUpdateConditions.Size = new Size(150, 28);
             buttonUpdateConditions.TabIndex = 4;
@@ -314,9 +345,9 @@
             // 
             // contextMenuStripUniforms
             // 
-            contextMenuStripUniforms.Items.AddRange(new ToolStripItem[] { addUniformToolStripMenuItem, editUniformToolStripMenuItem, deleteUniformToolStripMenuItem, toolStripSeparator2, checkOutInToolStripMenuItem, updateConditionsToolStripMenuItem });
+            contextMenuStripUniforms.Items.AddRange(new ToolStripItem[] { addUniformToolStripMenuItem, editUniformToolStripMenuItem, deleteUniformToolStripMenuItem, toolStripSeparator2, assignUniformToolStripMenuItem, unassignUniformToolStripMenuItem, toolStripSeparator3, checkOutInToolStripMenuItem, updateConditionsToolStripMenuItem });
             contextMenuStripUniforms.Name = "contextMenuStripUniforms";
-            contextMenuStripUniforms.Size = new Size(181, 120);
+            contextMenuStripUniforms.Size = new Size(210, 170);
             // 
             // addUniformToolStripMenuItem
             // 
@@ -342,19 +373,38 @@
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(177, 6);
+            toolStripSeparator2.Size = new Size(206, 6);
+            // 
+            // assignUniformToolStripMenuItem
+            // 
+            assignUniformToolStripMenuItem.Name = "assignUniformToolStripMenuItem";
+            assignUniformToolStripMenuItem.Size = new Size(209, 22);
+            assignUniformToolStripMenuItem.Text = "Assign to Student...";
+            assignUniformToolStripMenuItem.Click += AssignUniformToolStripMenuItem_Click;
+            // 
+            // unassignUniformToolStripMenuItem
+            // 
+            unassignUniformToolStripMenuItem.Name = "unassignUniformToolStripMenuItem";
+            unassignUniformToolStripMenuItem.Size = new Size(209, 22);
+            unassignUniformToolStripMenuItem.Text = "Unassign Student";
+            unassignUniformToolStripMenuItem.Click += UnassignUniformToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator3
+            // 
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            toolStripSeparator3.Size = new Size(206, 6);
             // 
             // checkOutInToolStripMenuItem
             // 
             checkOutInToolStripMenuItem.Name = "checkOutInToolStripMenuItem";
-            checkOutInToolStripMenuItem.Size = new Size(180, 22);
+            checkOutInToolStripMenuItem.Size = new Size(209, 22);
             checkOutInToolStripMenuItem.Text = "Check Out/In...";
             checkOutInToolStripMenuItem.Click += CheckOutInToolStripMenuItem_Click;
             // 
             // updateConditionsToolStripMenuItem
             // 
             updateConditionsToolStripMenuItem.Name = "updateConditionsToolStripMenuItem";
-            updateConditionsToolStripMenuItem.Size = new Size(180, 22);
+            updateConditionsToolStripMenuItem.Size = new Size(209, 22);
             updateConditionsToolStripMenuItem.Text = "Update Conditions...";
             updateConditionsToolStripMenuItem.Click += UpdateConditionsToolStripMenuItem_Click;
             // 
@@ -629,6 +679,8 @@
         private Button buttonAddUniform;
         private Button buttonEditUniform;
         private Button buttonDeleteUniform;
+        private Button buttonAssignUniform;
+        private Button buttonUnassignUniform;
         private Button buttonCheckOutUniform;
         private Button buttonUpdateConditions;
         private ContextMenuStrip contextMenuStripUniforms;
@@ -636,6 +688,9 @@
         private ToolStripMenuItem editUniformToolStripMenuItem;
         private ToolStripMenuItem deleteUniformToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem assignUniformToolStripMenuItem;
+        private ToolStripMenuItem unassignUniformToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator3;
         private ToolStripMenuItem checkOutInToolStripMenuItem;
         private ToolStripMenuItem updateConditionsToolStripMenuItem;
         private Label labelUniforms;

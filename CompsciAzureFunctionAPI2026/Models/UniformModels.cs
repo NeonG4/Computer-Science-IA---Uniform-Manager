@@ -25,12 +25,31 @@ namespace CompsciAzureFunctionAPI2026.Models
 
     /// <summary>
     /// Request to check out/in a uniform (User/Admin)
+    /// Note: Uniform must be assigned to a student first
     /// </summary>
     public class CheckOutUniformRequest
     {
         public string UniformIdentifier { get; set; } = string.Empty;
-        public string? StudentId { get; set; }
         public bool CheckOut { get; set; } // true = check out, false = check in
+        public int RequestingUserId { get; set; }
+    }
+
+    /// <summary>
+    /// Request to assign a uniform to a student (Admin only)
+    /// </summary>
+    public class AssignUniformRequest
+    {
+        public string UniformIdentifier { get; set; } = string.Empty;
+        public string StudentId { get; set; } = string.Empty;
+        public int RequestingUserId { get; set; }
+    }
+
+    /// <summary>
+    /// Request to unassign a uniform from a student (Admin only)
+    /// </summary>
+    public class UnassignUniformRequest
+    {
+        public string UniformIdentifier { get; set; } = string.Empty;
         public int RequestingUserId { get; set; }
     }
 

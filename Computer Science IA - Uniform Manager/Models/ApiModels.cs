@@ -71,6 +71,19 @@ namespace Computer_Science_IA___Uniform_Manager.Models
         public int RequestingUserId { get; set; }
     }
 
+    public class AssignUniformRequest
+    {
+        public string UniformIdentifier { get; set; } = string.Empty;
+        public string StudentId { get; set; } = string.Empty;
+        public int RequestingUserId { get; set; }
+    }
+
+    public class UnassignUniformRequest
+    {
+        public string UniformIdentifier { get; set; } = string.Empty;
+        public int RequestingUserId { get; set; }
+    }
+
     public class UpdateConditionsRequest
     {
         public string UniformIdentifier { get; set; } = string.Empty;

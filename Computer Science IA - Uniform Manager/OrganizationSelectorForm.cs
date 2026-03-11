@@ -60,7 +60,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 listBoxOrganizations.Items.Clear();
 
-                // Handle null or empty results gracefully
+                // Handle null or empty results
                 if (result == null)
                 {
                     System.Diagnostics.Debug.WriteLine("Received null response from GetOrganizations");
@@ -77,7 +77,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     return;
                 }
 
-                // Check if Organizations list is null or empty - this is normal for new users
+                // Check if organizations list is null or empty (new users, or no orgs)
                 if (result.Organizations == null || !result.Organizations.Any())
                 {
                     _organizations = new List<OrganizationDto>();
@@ -101,7 +101,7 @@ namespace Computer_Science_IA___Uniform_Manager
             }
             catch (HttpRequestException httpEx)
             {
-                // Network error - likely function not running
+                // Network error - function not running
                 System.Diagnostics.Debug.WriteLine($"Network error loading organizations: {httpEx.Message}");
                 listBoxOrganizations.Items.Clear();
                 listBoxOrganizations.Items.Add("No organizations");

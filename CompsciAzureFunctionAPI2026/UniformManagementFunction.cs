@@ -589,21 +589,165 @@ namespace CompsciAzureFunctionAPI2026
 
         #endregion
 
-        #region Check Out/In Uniform (User and Admin)
+        #region Assign/Unassign Uniform (Admin only)
 
         /// <summary>
-        /// POST check out or check in a uniform - User and Admin
+        /// POST assign uniform to student - Admin only
         /// </summary>
-        [Function("CheckOutUniform")]
-        public async Task<IActionResult> CheckOutUniform(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "uniforms/checkout")] HttpRequest req)
+        [Function("AssignUniform")]
+        public async Task<IActionResult> AssignUniform(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "uniforms/assign")] HttpRequest req)
         {
-            _logger.LogInformation("CheckOutUniform function triggered.");
+            _logger.LogInformation("AssignUniform function triggered.");
 
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                var request = JsonSerializer.Deserialize<CheckOutUniformRequest>(requestBody, new JsonSerializerOptions
+                var request = JsonSerializer.Deserialize<AssignUniformRequest>(requestBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (request == null || string.IsNullOrWhiteSpace(request.UniformIdentifier) || 
+                    string.IsNullOrWhiteSpace(request.StudentId))
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Invalid request. Uniform identifier and student ID are required."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Get the uniform's organization ID first
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId, AssignedStudentId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                await using var orgReader = await getOrgCmd.ExecuteReaderAsync();
+                if (!await orgReader.ReadAsync())
+                {
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = orgReader.GetInt32(0);
+                string? currentStudent = orgReader.IsDBNull(1) ? null : orgReader.GetString(1);
+                await orgReader.CloseAsync();
+
+                if (currentStudent != null)
+                {
+                    return new ConflictObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = $"Uniform is already assigned to student {currentStudent}. Unassign first."
+                    });
+                }
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        // This should never trigger, but in the event of running without proper auth checks, this prevents an information leak about data existence
+                        Success = false,
+                        Message = "You do not have access to this organization." 
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can assign uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                // Verify student exists in same organization
+                await using var checkStudentCmd = new SqlCommand(
+                    "SELECT COUNT(*) FROM [dbo].[Students] WHERE StudentIdentifier = @StudentId AND OrganizationId = @OrgId",
+                    connection);
+                checkStudentCmd.Parameters.AddWithValue("@StudentId", request.StudentId);
+                checkStudentCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                if ((int)(await checkStudentCmd.ExecuteScalarAsync() ?? 0) == 0)
+                {
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Student not found in this organization."
+                    });
+                }
+
+                // Assign uniform to student
+                await using var cmd = new SqlCommand(@"
+                    UPDATE [dbo].[Uniforms]
+                    SET AssignedStudentId = @StudentId,
+                        LastModified = GETDATE(),
+                        ModifiedBy = @UserId
+                    WHERE UniformIdentifier = @Id", connection);
+
+                cmd.Parameters.AddWithValue("@StudentId", request.StudentId);
+                cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                if (rowsAffected == 0)
+                {
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                return new OkObjectResult(new UniformResponse
+                {
+                    Success = true,
+                    Message = $"Uniform assigned to student {request.StudentId} successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning uniform.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        /// <summary>
+        /// POST unassign uniform from student - Admin only
+        /// </summary>
+        [Function("UnassignUniform")]
+        public async Task<IActionResult> UnassignUniform(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "uniforms/unassign")] HttpRequest req)
+        {
+            _logger.LogInformation("UnassignUniform function triggered.");
+
+            try
+            {
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var request = JsonSerializer.Deserialize<UnassignUniformRequest>(requestBody, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
@@ -639,6 +783,129 @@ namespace CompsciAzureFunctionAPI2026
 
                 int organizationId = (int)orgResult;
 
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", organizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can unassign uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                // Unassign uniform (also check in if checked out)
+                await using var cmd = new SqlCommand(@"
+                    UPDATE [dbo].[Uniforms]
+                    SET AssignedStudentId = NULL,
+                        IsCheckedOut = 0,
+                        LastModified = GETDATE(),
+                        ModifiedBy = @UserId
+                    WHERE UniformIdentifier = @Id", connection);
+
+                cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                if (rowsAffected == 0)
+                {
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                return new OkObjectResult(new UniformResponse
+                {
+                    Success = true,
+                    Message = "Uniform unassigned successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unassigning uniform.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        #endregion
+
+        #region Check Out/In Uniform (User and Admin)
+
+        /// <summary>
+        /// POST check out or check in a uniform - User and Admin
+        /// Note: Uniform must be assigned to a student before checking out
+        /// </summary>
+        [Function("CheckOutUniform")]
+        public async Task<IActionResult> CheckOutUniform(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "uniforms/checkout")] HttpRequest req)
+        {
+            _logger.LogInformation("CheckOutUniform function triggered.");
+
+            try
+            {
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var request = JsonSerializer.Deserialize<CheckOutUniformRequest>(requestBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (request == null || string.IsNullOrWhiteSpace(request.UniformIdentifier))
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Invalid request."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Get the uniform's organization ID and assignment 
+                await using var getOrgCmd = new SqlCommand(
+                    "SELECT OrganizationId, AssignedStudentId, IsCheckedOut FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
+                    connection);
+                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+
+                await using var orgReader = await getOrgCmd.ExecuteReaderAsync();
+                if (!await orgReader.ReadAsync())
+                {
+                    return new NotFoundObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform not found."
+                    });
+                }
+
+                int organizationId = orgReader.GetInt32(0);
+                string? assignedStudent = orgReader.IsDBNull(1) ? null : orgReader.GetString(1);
+                bool isCurrentlyCheckedOut = orgReader.GetBoolean(2);
+                await orgReader.CloseAsync();
+
                 // Check User or Admin permission in this organization
                 await using var permCmd = new SqlCommand(@"
                     SELECT AccountLevel FROM [dbo].[UserOrganizations]
@@ -670,17 +937,44 @@ namespace CompsciAzureFunctionAPI2026
                     };
                 }
 
+                // Validate assignment
+                if (assignedStudent == null)
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Cannot check out uniform that is not assigned to a student. Assign it first."
+                    });
+                }
+
+                // Validate checkout/checkin logic
+                if (request.CheckOut && isCurrentlyCheckedOut)
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform is already checked out."
+                    });
+                }
+
+                if (!request.CheckOut && !isCurrentlyCheckedOut)
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Uniform is already checked in."
+                    });
+                }
+
                 // Update check out status
                 await using var cmd = new SqlCommand(@"
                     UPDATE [dbo].[Uniforms]
                     SET IsCheckedOut = @CheckOut,
-                        AssignedStudentId = @StudentId,
                         LastModified = GETDATE(),
                         ModifiedBy = @UserId
                     WHERE UniformIdentifier = @Id", connection);
 
                 cmd.Parameters.AddWithValue("@CheckOut", request.CheckOut);
-                cmd.Parameters.AddWithValue("@StudentId", (object?)request.StudentId ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
                 cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
 
@@ -699,7 +993,7 @@ namespace CompsciAzureFunctionAPI2026
                 return new OkObjectResult(new UniformResponse
                 {
                     Success = true,
-                    Message = $"Uniform {action} successfully."
+                    Message = $"Uniform {action} successfully"
                 });
             }
             catch (Exception ex)

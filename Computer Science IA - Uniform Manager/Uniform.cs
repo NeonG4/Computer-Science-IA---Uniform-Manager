@@ -27,44 +27,40 @@ namespace Computer_Science_IA___Uniform_Manager
         }
 
         /// <summary>
-        /// Checks out the uniform to the assigned student
+        /// Checks out the uniform (requires assignment first)
         /// </summary>
         public void CheckOut()
         {
             if (AssignedStudent == null)
             {
-                return;
+                throw new InvalidOperationException("Cannot check out uniform that is not assigned to a student.");
             }
             IsCheckedOut = true;
         }
 
         /// <summary>
-        /// Checks in the uniform from the assigned student
+        /// Checks in the uniform (keeps assignment)
         /// </summary>
         public void CheckIn()
         {
-            if (AssignedStudent == null)
-            {
-                return;
-            }
             IsCheckedOut = false;
         }
 
         /// <summary>
-        /// Assigns this uniform to a student
+        /// Assigns this uniform to a student (does not check out)
         /// </summary>
         public void AssignToStudent(Student student)
         {
             if (AssignedStudent != null)
             {
-                return;
+                throw new InvalidOperationException("Uniform is already assigned. Unassign first.");
             }
             AssignedStudent = student;
             student.AssignUniform(this);
         }
 
         /// <summary>
-        /// Unassigns this uniform from the current student
+        /// Unassigns this uniform from the current student (checks in if checked out)
         /// </summary>
         public void UnassignFromStudent()
         {
