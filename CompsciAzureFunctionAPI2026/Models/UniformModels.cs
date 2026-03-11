@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace CompsciAzureFunctionAPI2026.Models
 {
     /// <summary>
@@ -96,8 +99,8 @@ namespace CompsciAzureFunctionAPI2026.Models
         public int Size { get; set; }
         public bool IsCheckedOut { get; set; }
         public string? AssignedStudentId { get; set; }
-        public int[] Conditions { get; set; } = Array.Empty<int>();
-        public string[] ConditionNames { get; set; } = Array.Empty<string>();
+        public int[] Conditions { get; set; } = [];
+        public string[] ConditionNames { get; set; } = [];
         public bool IsInGoodCondition { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? LastModified { get; set; }

@@ -418,6 +418,18 @@ namespace Computer_Science_IA___Uniform_Manager
             buttonDeleteStudent.Enabled = hasSelection;
         }
 
+        private async void DataGridViewStudents_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Ignore clicks on header row
+            if (e.RowIndex < 0) return;
+
+            // Only allow edit for admins (those who can see the edit button)
+            if (buttonEditStudent != null && buttonEditStudent.Visible)
+            {
+                await EditSelectedStudent();
+            }
+        }
+
         private void DataGridViewUniforms_SelectionChanged(object sender, EventArgs e)
         {
             if (!panelUniformsButtons.Visible) return;
@@ -462,6 +474,18 @@ namespace Computer_Science_IA___Uniform_Manager
             if (buttonUpdateConditions.Visible)
             {
                 buttonUpdateConditions.Enabled = hasSelection;
+            }
+        }
+
+        private async void DataGridViewUniforms_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Ignore clicks on header row
+            if (e.RowIndex < 0) return;
+
+            // Only allow edit for admins (those who can see the edit button)
+            if (buttonEditUniform != null && buttonEditUniform.Visible)
+            {
+                await EditSelectedUniform();
             }
         }
 
@@ -1406,8 +1430,113 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private async Task AddNewStudent()
         {
-            // Implementation from existing code
-            MessageBox.Show("Add Student functionality - Implementation needed");
+            using var addForm = new Form();
+            addForm.Text = "Add New Student";
+            addForm.Size = new System.Drawing.Size(400, 300);
+            addForm.StartPosition = FormStartPosition.CenterParent;
+            addForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            addForm.MaximizeBox = false;
+            addForm.MinimizeBox = false;
+
+            var lblStudentId = new Label { Text = "Student ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
+            var txtStudentId = new TextBox { Location = new System.Drawing.Point(130, 18), Size = new System.Drawing.Size(240, 20), CharacterCasing = CharacterCasing.Upper };
+
+            var lblFirstName = new Label { Text = "First Name:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
+            var txtFirstName = new TextBox { Location = new System.Drawing.Point(130, 58), Size = new System.Drawing.Size(240, 20) };
+
+            var lblLastName = new Label { Text = "Last Name:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtLastName = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(240, 20) };
+
+            var lblGrade = new Label { Text = "Grade:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 20) };
+            var numGrade = new NumericUpDown { Location = new System.Drawing.Point(130, 138), Size = new System.Drawing.Size(100, 20), Minimum = 1, Maximum = 12, Value = 9 };
+
+            var btnCreate = new Button
+            {
+                Text = "Add Student",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(200, 200),
+                Size = new System.Drawing.Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(20, 200),
+                Size = new System.Drawing.Size(150, 35)
+            };
+
+            addForm.Controls.AddRange(new Control[] {
+                lblStudentId, txtStudentId,
+                lblFirstName, txtFirstName,
+                lblLastName, txtLastName,
+                lblGrade, numGrade,
+                btnCreate, btnCancel
+            });
+            addForm.AcceptButton = btnCreate;
+            addForm.CancelButton = btnCancel;
+
+            if (addForm.ShowDialog() == DialogResult.OK)
+            {
+                if (string.IsNullOrWhiteSpace(txtStudentId.Text) || 
+                    string.IsNullOrWhiteSpace(txtFirstName.Text) || 
+                    string.IsNullOrWhiteSpace(txtLastName.Text))
+                {
+                    MessageBox.Show("Please fill in all fields.", "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                await CreateStudentAsync(
+                    txtStudentId.Text.Trim(), 
+                    txtFirstName.Text.Trim(), 
+                    txtLastName.Text.Trim(), 
+                    (int)numGrade.Value);
+            }
+        }
+
+        private async Task CreateStudentAsync(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new CreateStudentRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    StudentIdentifier = studentId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{studentId}' added successfully!",
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error adding student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void ButtonEditStudent_Click(object sender, EventArgs e)
@@ -1422,8 +1551,138 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private async Task EditSelectedStudent()
         {
-            // Implementation from existing code
-            MessageBox.Show("Edit Student functionality - Implementation needed");
+            if (dataGridViewStudents.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewStudents.SelectedRows[0];
+            string studentId = selectedRow.Cells["StudentIdentifier"].Value.ToString()!;
+            string firstName = selectedRow.Cells["FirstName"].Value.ToString()!;
+            string lastName = selectedRow.Cells["LastName"].Value.ToString()!;
+            int grade = Convert.ToInt32(selectedRow.Cells["Grade"].Value);
+
+            using var editForm = new Form();
+            editForm.Text = $"Edit Student - {studentId}";
+            editForm.Size = new System.Drawing.Size(400, 300);
+            editForm.StartPosition = FormStartPosition.CenterParent;
+            editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            editForm.MaximizeBox = false;
+            editForm.MinimizeBox = false;
+
+            var lblStudentId = new Label { Text = "Student ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
+            var txtStudentId = new TextBox {
+                Location = new System.Drawing.Point(130, 18),
+                Size = new System.Drawing.Size(240, 20),
+                Text = studentId,
+                ReadOnly = true,
+                BackColor = System.Drawing.SystemColors.Control
+            };
+
+            var lblFirstName = new Label { Text = "First Name:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
+            var txtFirstName = new TextBox { 
+                Location = new System.Drawing.Point(130, 58), 
+                Size = new System.Drawing.Size(240, 20),
+                Text = firstName
+            };
+
+            var lblLastName = new Label { Text = "Last Name:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtLastName = new TextBox { 
+                Location = new System.Drawing.Point(130, 98), 
+                Size = new System.Drawing.Size(240, 20),
+                Text = lastName
+            };
+
+            var lblGrade = new Label { Text = "Grade:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 20) };
+            var numGrade = new NumericUpDown { 
+                Location = new System.Drawing.Point(130, 138), 
+                Size = new System.Drawing.Size(100, 20), 
+                Minimum = 1, 
+                Maximum = 12, 
+                Value = grade 
+            };
+
+            var btnSave = new Button
+            {
+                Text = "Save Changes",
+                DialogResult = DialogResult.OK,
+                Location = new System.Drawing.Point(200, 200),
+                Size = new System.Drawing.Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new System.Drawing.Point(20, 200),
+                Size = new System.Drawing.Size(150, 35)
+            };
+
+            editForm.Controls.AddRange(new Control[] {
+                lblStudentId, txtStudentId,
+                lblFirstName, txtFirstName,
+                lblLastName, txtLastName,
+                lblGrade, numGrade,
+                btnSave, btnCancel
+            });
+            editForm.AcceptButton = btnSave;
+            editForm.CancelButton = btnCancel;
+
+            if (editForm.ShowDialog() == DialogResult.OK)
+            {
+                if (string.IsNullOrWhiteSpace(txtFirstName.Text) || string.IsNullOrWhiteSpace(txtLastName.Text))
+                {
+                    MessageBox.Show("First name and last name are required.", "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                await UpdateStudentAsync(
+                    studentId, 
+                    txtFirstName.Text.Trim(), 
+                    txtLastName.Text.Trim(), 
+                    (int)numGrade.Value);
+            }
+        }
+
+        private async Task UpdateStudentAsync(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new UpdateStudentRequest
+                {
+                    StudentIdentifier = studentId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PutAsync($"{API_BASE_URL}/UpdateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{studentId}' updated successfully!",
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error updating student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void ButtonDeleteStudent_Click(object sender, EventArgs e)
@@ -1438,8 +1697,59 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private async Task DeleteSelectedStudent()
         {
-            // Implementation from existing code
-            MessageBox.Show("Delete Student functionality - Implementation needed");
+            if (dataGridViewStudents.SelectedRows.Count == 0) return;
+
+            var selectedRow = dataGridViewStudents.SelectedRows[0];
+            string studentId = selectedRow.Cells["StudentIdentifier"].Value.ToString()!;
+            string fullName = selectedRow.Cells["FullName"].Value?.ToString() ?? 
+                             $"{selectedRow.Cells["FirstName"].Value} {selectedRow.Cells["LastName"].Value}";
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to delete student '{studentId}' ({fullName})?\n\n" +
+                $"This action cannot be undone.\n\n" +
+                $"Warning: Any uniforms assigned to this student will be unassigned.",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            await DeleteStudentAsync(studentId);
+        }
+
+        private async Task DeleteStudentAsync(string studentId)
+        {
+            try
+            {
+                var response = await httpClient.DeleteAsync(
+                    $"{API_BASE_URL}/students/{studentId}?userId={_currentUser!.UserId}");
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show($"Student '{studentId}' deleted successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                    // Refresh uniforms in case any were assigned to this student
+                    await LoadUniformsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error deleting student:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting student:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         #endregion
@@ -1448,46 +1758,655 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private void SwitchOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Switch Organization functionality - Implementation needed");
+            // Close this form and return to organization selector
+            var confirmResult = MessageBox.Show(
+                "Switch to a different organization?\n\n" +
+                "This will close the current view.",
+                "Switch Organization",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmResult == DialogResult.Yes)
+            {
+                this.DialogResult = DialogResult.Retry; // Signal to show org selector again
+                this.Close();
+            }
         }
 
         private void JoinOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Join Organization functionality - Implementation needed");
+            using var joinForm = new JoinOrganizationForm(_currentUser!);
+            if (joinForm.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show(
+                    "Your request has been sent!\n\n" +
+                    "Once approved by an administrator, you can switch to the new organization.",
+                    "Request Sent",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
         }
 
         private void OrganizationInfoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Organization Info functionality - Implementation needed");
+            if (_currentOrganization == null) return;
+
+            using var infoForm = new OrganizationInfoForm(_currentOrganization);
+            infoForm.ShowDialog();
         }
 
         private void ManageJoinRequestsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Manage Join Requests functionality - Implementation needed");
+            // Only admins can manage join requests
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show(
+                    "Only administrators can manage join requests.",
+                    "Insufficient Permissions",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_currentUser == null || _currentOrganization == null) return;
+
+            using var joinRequestsForm = new ManageJoinRequestsForm(_currentUser, _currentOrganization);
+            joinRequestsForm.ShowDialog();
         }
 
         private void ManageUsersToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Manage Users functionality - Implementation needed");
+            // Only admins can manage users
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show(
+                    "Only administrators can manage users.",
+                    "Insufficient Permissions",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_currentUser == null || _currentOrganization == null) return;
+
+            // Open the user management window
+            using var manageUsersForm = new ManageOrganizationUsersForm(_currentUser, _currentOrganization);
+            if (manageUsersForm.ShowDialog() == DialogResult.OK)
+            {
+                // Refresh users list if needed
+                LoadUsersAsync().ConfigureAwait(false);
+            }
         }
 
         private void ImportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Import Uniforms functionality - Implementation needed");
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show(
+                    "Only administrators can import uniforms.",
+                    "Insufficient Permissions",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            ImportUniforms();
+        }
+
+        private async void ImportUniforms()
+        {
+            try
+            {
+                // Open file dialog
+                using var openFileDialog = new OpenFileDialog
+                {
+                    Title = "Select Uniforms File to Import",
+                    Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (openFileDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                // Read the file
+                DataTable importData;
+                try
+                {
+                    importData = ReadSpreadsheetFile(openFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error reading file:\n\n{ex.Message}",
+                        "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (importData.Rows.Count == 0)
+                {
+                    MessageBox.Show("The file contains no data to import.",
+                        "Empty File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Show column mapping form
+                using var mappingForm = new ImportColumnMappingForm(importData, ImportColumnMappingForm.ImportType.Uniforms);
+                if (mappingForm.ShowDialog() != DialogResult.OK)
+                    return;
+
+                // Process import
+                await ProcessUniformImport(importData, mappingForm.ColumnMapping);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during import:\n\n{ex.Message}",
+                    "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task ProcessUniformImport(DataTable data, Dictionary<string, string> columnMapping)
+        {
+            int successCount = 0;
+            int errorCount = 0;
+            var errors = new List<string>();
+
+            // Create progress form
+            using var progressForm = new Form
+            {
+                Text = "Importing Uniforms",
+                Size = new Size(400, 150),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ControlBox = false
+            };
+
+            var progressBar = new ProgressBar
+            {
+                Location = new Point(20, 20),
+                Size = new Size(350, 30),
+                Maximum = data.Rows.Count
+            };
+
+            var lblStatus = new Label
+            {
+                Location = new Point(20, 60),
+                Size = new Size(350, 40),
+                Text = "Starting import..."
+            };
+
+            progressForm.Controls.AddRange(new Control[] { progressBar, lblStatus });
+            progressForm.Show();
+
+            try
+            {
+                for (int i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    progressBar.Value = i + 1;
+                    lblStatus.Text = $"Processing record {i + 1} of {data.Rows.Count}...";
+                    Application.DoEvents();
+
+                    try
+                    {
+                        // Extract data from row
+                        string uniformId = GetRowValue(row, columnMapping, "UniformIdentifier")?.Trim() ?? "";
+                        string typeStr = GetRowValue(row, columnMapping, "UniformType")?.Trim() ?? "";
+                        string sizeStr = GetRowValue(row, columnMapping, "Size")?.Trim() ?? "";
+
+                        if (string.IsNullOrWhiteSpace(uniformId))
+                        {
+                            errors.Add($"Row {i + 1}: Missing Uniform ID");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Parse uniform type
+                        int uniformType = ParseUniformType(typeStr);
+                        if (uniformType == -1)
+                        {
+                            errors.Add($"Row {i + 1} ({uniformId}): Invalid uniform type '{typeStr}'");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Parse size
+                        if (!int.TryParse(sizeStr, out int size) || size < 1 || size > 100)
+                        {
+                            errors.Add($"Row {i + 1} ({uniformId}): Invalid size '{sizeStr}'");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Create uniform via API
+                        var result = await CreateUniformViaImport(uniformId, uniformType, size);
+                        if (result)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            errors.Add($"Row {i + 1} ({uniformId}): Failed to create (may already exist)");
+                            errorCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"Row {i + 1}: {ex.Message}");
+                        errorCount++;
+                    }
+                }
+            }
+            finally
+            {
+                progressForm.Close();
+            }
+
+            // Refresh the uniforms list
+            await LoadUniformsAsync();
+
+            // Show results
+            var resultMessage = $"Import completed!\n\n" +
+                               $"✓ Successfully imported: {successCount}\n" +
+                               $"✗ Errors: {errorCount}";
+
+            if (errors.Any() && errors.Count <= 10)
+            {
+                resultMessage += $"\n\nErrors:\n{string.Join("\n", errors)}";
+            }
+            else if (errors.Count > 10)
+            {
+                resultMessage += $"\n\nShowing first 10 errors:\n{string.Join("\n", errors.Take(10))}\n... and {errors.Count - 10} more";
+            }
+
+            MessageBox.Show(resultMessage, "Import Results",
+                MessageBoxButtons.OK,
+                errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        private async Task<bool> CreateUniformViaImport(string uniformId, int uniformType, int size)
+        {
+            try
+            {
+                var request = new CreateUniformRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    UniformIdentifier = uniformId.ToUpper(),
+                    UniformType = uniformType,
+                    Size = size,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateUniform", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result?.Success == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private int ParseUniformType(string typeStr)
+        {
+            if (string.IsNullOrWhiteSpace(typeStr))
+                return -1;
+
+            typeStr = typeStr.Trim().ToLower().Replace(" ", "").Replace("-", "");
+
+            return typeStr switch
+            {
+                "concertcoat" or "concert" or "0" => 0,
+                "drummajorcoat" or "drummajor" or "dm" or "1" => 1,
+                "hat" or "2" => 2,
+                "marchingcoat" or "marching" or "coat" or "3" => 3,
+                "marchingshorts" or "shorts" or "4" => 4,
+                "marchingsocks" or "socks" or "5" => 5,
+                "pants" or "6" => 6,
+                _ => -1
+            };
         }
 
         private void ImportStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Implementation from existing code
-            MessageBox.Show("Import Students functionality - Implementation needed");
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show(
+                    "Only administrators can import students.",
+                    "Insufficient Permissions",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            ImportStudents();
         }
 
+        private async void ImportStudents()
+        {
+            try
+            {
+                // Open file dialog
+                using var openFileDialog = new OpenFileDialog
+                {
+                    Title = "Select Students File to Import",
+                    Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (openFileDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                // Read the file
+                DataTable importData;
+                try
+                {
+                    importData = ReadSpreadsheetFile(openFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error reading file:\n\n{ex.Message}",
+                        "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (importData.Rows.Count == 0)
+                {
+                    MessageBox.Show("The file contains no data to import.",
+                        "Empty File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Show column mapping form
+                using var mappingForm = new ImportColumnMappingForm(importData, ImportColumnMappingForm.ImportType.Students);
+                if (mappingForm.ShowDialog() != DialogResult.OK)
+                    return;
+
+                // Process import
+                await ProcessStudentImport(importData, mappingForm.ColumnMapping);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during import:\n\n{ex.Message}",
+                    "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task ProcessStudentImport(DataTable data, Dictionary<string, string> columnMapping)
+        {
+            int successCount = 0;
+            int errorCount = 0;
+            var errors = new List<string>();
+
+            // Create progress form
+            using var progressForm = new Form
+            {
+                Text = "Importing Students",
+                Size = new Size(400, 150),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ControlBox = false
+            };
+
+            var progressBar = new ProgressBar
+            {
+                Location = new Point(20, 20),
+                Size = new Size(350, 30),
+                Maximum = data.Rows.Count
+            };
+
+            var lblStatus = new Label
+            {
+                Location = new Point(20, 60),
+                Size = new Size(350, 40),
+                Text = "Starting import..."
+            };
+
+            progressForm.Controls.AddRange(new Control[] { progressBar, lblStatus });
+            progressForm.Show();
+
+            try
+            {
+                for (int i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    progressBar.Value = i + 1;
+                    lblStatus.Text = $"Processing record {i + 1} of {data.Rows.Count}...";
+                    Application.DoEvents();
+
+                    try
+                    {
+                        // Extract data from row
+                        string studentId = GetRowValue(row, columnMapping, "StudentIdentifier")?.Trim() ?? "";
+                        string firstName = GetRowValue(row, columnMapping, "FirstName")?.Trim() ?? "";
+                        string lastName = GetRowValue(row, columnMapping, "LastName")?.Trim() ?? "";
+                        string gradeStr = GetRowValue(row, columnMapping, "Grade")?.Trim() ?? "";
+
+                        if (string.IsNullOrWhiteSpace(studentId))
+                        {
+                            errors.Add($"Row {i + 1}: Missing Student ID");
+                            errorCount++;
+                            continue;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(firstName))
+                        {
+                            errors.Add($"Row {i + 1} ({studentId}): Missing First Name");
+                            errorCount++;
+                            continue;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(lastName))
+                        {
+                            errors.Add($"Row {i + 1} ({studentId}): Missing Last Name");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Parse grade
+                        if (!int.TryParse(gradeStr, out int grade) || grade < 1 || grade > 12)
+                        {
+                            errors.Add($"Row {i + 1} ({studentId}): Invalid grade '{gradeStr}'");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Create student via API
+                        var result = await CreateStudentViaImport(studentId, firstName, lastName, grade);
+                        if (result)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            errors.Add($"Row {i + 1} ({studentId}): Failed to create (may already exist)");
+                            errorCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"Row {i + 1}: {ex.Message}");
+                        errorCount++;
+                    }
+                }
+            }
+            finally
+            {
+                progressForm.Close();
+            }
+
+            // Refresh the students list
+            await LoadStudentsAsync();
+
+            // Show results
+            var resultMessage = $"Import completed!\n\n" +
+                               $"✓ Successfully imported: {successCount}\n" +
+                               $"✗ Errors: {errorCount}";
+
+            if (errors.Any() && errors.Count <= 10)
+            {
+                resultMessage += $"\n\nErrors:\n{string.Join("\n", errors)}";
+            }
+            else if (errors.Count > 10)
+            {
+                resultMessage += $"\n\nShowing first 10 errors:\n{string.Join("\n", errors.Take(10))}\n... and {errors.Count - 10} more";
+            }
+
+            MessageBox.Show(resultMessage, "Import Results",
+                MessageBoxButtons.OK,
+                errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        private async Task<bool> CreateStudentViaImport(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new CreateStudentRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    StudentIdentifier = studentId.ToUpper(),
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result?.Success == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private DataTable ReadSpreadsheetFile(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLower();
+            
+            if (extension == ".csv")
+            {
+                return ReadCsvFile(filePath);
+            }
+            else if (extension == ".xlsx" || extension == ".xls")
+            {
+                return ReadExcelFile(filePath);
+            }
+            else
+            {
+                throw new NotSupportedException("File format not supported. Please use CSV or Excel files.");
+            }
+        }
+
+        private DataTable ReadCsvFile(string filePath)
+        {
+            var dataTable = new DataTable();
+            var lines = File.ReadAllLines(filePath);
+
+            if (lines.Length == 0)
+                return dataTable;
+
+            // Parse header
+            var headers = ParseCsvLine(lines[0]);
+            foreach (var header in headers)
+            {
+                dataTable.Columns.Add(header.Trim());
+            }
+
+            // Parse data rows
+            for (int i = 1; i < lines.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i]))
+                    continue;
+
+                var values = ParseCsvLine(lines[i]);
+                var row = dataTable.NewRow();
+                
+                for (int j = 0; j < Math.Min(values.Length, dataTable.Columns.Count); j++)
+                {
+                    row[j] = values[j];
+                }
+                
+                dataTable.Rows.Add(row);
+            }
+
+            return dataTable;
+        }
+
+        private string[] ParseCsvLine(string line)
+        {
+            var result = new List<string>();
+            var currentValue = new StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                if (c == '"')
+                {
+                    inQuotes = !inQuotes;
+                }
+                else if (c == ',' && !inQuotes)
+                {
+                    result.Add(currentValue.ToString());
+                    currentValue.Clear();
+                }
+                else
+                {
+                    currentValue.Append(c);
+                }
+            }
+
+            result.Add(currentValue.ToString());
+            return result.ToArray();
+        }
+
+        private DataTable ReadExcelFile(string filePath)
+        {
+            // For Excel files, we need a library like EPPlus or ClosedXML
+            // For simplicity, I'll provide a basic implementation that tells users to convert to CSV
+            throw new NotSupportedException(
+                "Excel file support requires additional libraries.\n\n" +
+                "Please save your Excel file as CSV format and try again:\n" +
+                "1. Open the file in Excel\n" +
+                "2. File → Save As\n" +
+                "3. Choose 'CSV (Comma delimited) (*.csv)'\n" +
+                "4. Import the CSV file");
+        }
+
+        private string? GetRowValue(DataRow row, Dictionary<string, string> columnMapping, string fieldName)
+        {
+            if (columnMapping.TryGetValue(fieldName, out var columnName))
+            {
+                if (row.Table.Columns.Contains(columnName))
+                {
+                    return row[columnName]?.ToString();
+                }
+            }
+            return null;
+        }
         #endregion
     }
 }

@@ -243,6 +243,7 @@
             dataGridViewUniforms.Size = new Size(322, 238);
             dataGridViewUniforms.TabIndex = 1;
             dataGridViewUniforms.SelectionChanged += DataGridViewUniforms_SelectionChanged;
+            dataGridViewUniforms.CellDoubleClick += DataGridViewUniforms_CellDoubleClick;
             // 
             // panelUniformsButtons
             // 
@@ -438,6 +439,7 @@
             dataGridViewStudents.Size = new Size(322, 298);
             dataGridViewStudents.TabIndex = 1;
             dataGridViewStudents.SelectionChanged += DataGridViewStudents_SelectionChanged;
+            dataGridViewStudents.CellDoubleClick += DataGridViewStudents_CellDoubleClick;
             // 
             // panelStudentsButtons
             // 
