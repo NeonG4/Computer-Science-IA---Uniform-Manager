@@ -2214,8 +2214,9 @@ namespace Computer_Science_IA___Uniform_Manager
                             continue;
                         }
 
-                        // Parse grade
-                        if (!int.TryParse(gradeStr, out int grade) || grade < 1 || grade > 12)
+                        // Parse grade with flexible formatting
+                        int grade = ParseGrade(gradeStr);
+                        if (grade == -1)
                         {
                             errors.Add($"Row {i + 1} ({studentId}): Invalid grade '{gradeStr}'");
                             errorCount++;
@@ -2266,6 +2267,58 @@ namespace Computer_Science_IA___Uniform_Manager
             MessageBox.Show(resultMessage, "Import Results",
                 MessageBoxButtons.OK,
                 errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        private int ParseGrade(string gradeStr)
+        {
+            if (string.IsNullOrWhiteSpace(gradeStr))
+                return -1;
+
+            // Remove common words and normalize
+            gradeStr = gradeStr.Trim().ToLower()
+                .Replace("grade", "")
+                .Replace("th", "")
+                .Replace("st", "")
+                .Replace("nd", "")
+                .Replace("rd", "")
+                .Replace(" ", "")
+                .Trim();
+
+            // Try direct integer parse
+            if (int.TryParse(gradeStr, out int grade))
+            {
+                if (grade >= 1 && grade <= 12)
+                    return grade;
+            }
+
+            // Try word-to-number conversion
+            grade = gradeStr switch
+            {
+                "first" or "one" or "1" => 1,
+                "second" or "two" or "2" => 2,
+                "third" or "three" or "3" => 3,
+                "fourth" or "four" or "4" => 4,
+                "fifth" or "five" or "5" => 5,
+                "sixth" or "six" or "6" => 6,
+                "seventh" or "seven" or "7" => 7,
+                "eighth" or "eight" or "8" => 8,
+                "ninth" or "nine" or "9" => 9,
+                "tenth" or "ten" or "10" => 10,
+                "eleventh" or "eleven" or "11" => 11,
+                "twelfth" or "twelve" or "12" => 12,
+                "k" or "kindergarten" or "0" => 0, // Optional: support kindergarten
+                "freshman" or "freshmen" => 9,
+                "sophomore" or "sophomores" => 10,
+                "junior" or "juniors" => 11,
+                "senior" or "seniors" => 12,
+                _ => -1
+            };
+
+            // Validate range (1-12, or 0 if kindergarten is supported)
+            if (grade >= 1 && grade <= 12)
+                return grade;
+
+            return -1;
         }
 
         private async Task<bool> CreateStudentViaImport(string studentId, string firstName, string lastName, int grade)
