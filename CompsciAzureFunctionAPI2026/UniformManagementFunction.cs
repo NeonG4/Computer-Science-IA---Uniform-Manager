@@ -587,6 +587,82 @@ namespace CompsciAzureFunctionAPI2026
             }
         }
 
+        /// <summary>
+        /// DELETE all uniforms for an organization - Admin only
+        /// </summary>
+        [Function("DeleteAllUniforms")]
+        public async Task<IActionResult> DeleteAllUniforms(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "organizations/{orgId}/uniforms")] HttpRequest req,
+            int orgId)
+        {
+            _logger.LogInformation("DeleteAllUniforms function triggered for organization: {OrgId}", orgId);
+
+            try
+            {
+                if (!int.TryParse(req.Query["userId"], out int userId))
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "User ID is required."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", userId);
+                permCmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can delete all uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                await using var cmd = new SqlCommand(
+                    "DELETE FROM [dbo].[Uniforms] WHERE OrganizationId = @OrgId",
+                    connection);
+                cmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                return new OkObjectResult(new UniformResponse
+                {
+                    Success = true,
+                    Message = $"Successfully deleted {rowsAffected} uniforms."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting all uniforms.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
         #endregion
 
         #region Assign/Unassign Uniform (Admin only)

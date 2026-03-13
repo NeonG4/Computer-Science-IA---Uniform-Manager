@@ -1170,6 +1170,57 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        private async void DeleteAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can delete all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to delete ALL uniforms in {_currentOrganization.OrganizationName}?\n\n" +
+                $"This action CANNOT be undone.",
+                "Confirm Delete All",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            // Second confirmation
+            if (!ConfirmActionWithOrganizationName("delete all uniforms")) return;
+
+            try
+            {
+                var response = await httpClient.DeleteAsync(
+                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms?userId={_currentUser!.UserId}");
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "All uniforms deleted successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUniformsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error deleting all uniforms:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting all uniforms:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private async void ButtonAssignUniform_Click(object sender, EventArgs e)
         {
             await AssignSelectedUniform();
@@ -1947,6 +1998,110 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        private async void DeleteAllStudentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can delete all students.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to delete ALL students in {_currentOrganization.OrganizationName}?\n\n" +
+                $"This action CANNOT be undone and will unassign all uniforms.",
+                "Confirm Delete All",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            // Second confirmation
+            if (!ConfirmActionWithOrganizationName("delete all students")) return;
+
+            try
+            {
+                var response = await httpClient.DeleteAsync(
+                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/students?userId={_currentUser!.UserId}");
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "All students deleted successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadStudentsAsync();
+                    await LoadUniformsAsync(); // unassigned uniforms
+                }
+                else
+                {
+                    MessageBox.Show($"Error deleting all students:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting all students:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private bool ConfirmActionWithOrganizationName(string actionDescription)
+        {
+            using var confirmForm = new Form();
+            confirmForm.Text = "Final Confirmation";
+            confirmForm.Size = new Size(400, 200);
+            confirmForm.StartPosition = FormStartPosition.CenterParent;
+            confirmForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            confirmForm.MaximizeBox = false;
+            confirmForm.MinimizeBox = false;
+
+            var lblInfo = new Label
+            {
+                Text = $"To confirm {actionDescription}, type the organization name\n({_currentOrganization!.OrganizationName}):",
+                Location = new Point(20, 20),
+                Size = new Size(350, 40)
+            };
+
+            var txtOrgName = new TextBox
+            {
+                Location = new Point(20, 70),
+                Size = new Size(350, 25)
+            };
+
+            var btnConfirm = new Button
+            {
+                Text = "Confirm Delete",
+                DialogResult = DialogResult.OK,
+                Location = new Point(200, 110),
+                Size = new Size(170, 35),
+                Enabled = false
+            };
+
+            txtOrgName.TextChanged += (s, ev) =>
+            {
+                btnConfirm.Enabled = string.Equals(txtOrgName.Text.Trim(), _currentOrganization.OrganizationName, StringComparison.OrdinalIgnoreCase);
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(20, 110),
+                Size = new Size(150, 35)
+            };
+
+            confirmForm.Controls.AddRange(new Control[] { lblInfo, txtOrgName, btnConfirm, btnCancel });
+            confirmForm.AcceptButton = btnConfirm;
+            confirmForm.CancelButton = btnCancel;
+
+            return confirmForm.ShowDialog() == DialogResult.OK;
+        }
+
         #endregion
 
         #region Menu Event Handlers
@@ -2040,8 +2195,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 MessageBox.Show(
                     "Only administrators can import uniforms.",
                     "Insufficient Permissions",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 

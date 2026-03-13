@@ -628,6 +628,90 @@ namespace CompsciAzureFunctionAPI2026
             }
         }
 
+        /// <summary>
+        /// DELETE all students for an organization - Admin only
+        /// </summary>
+        [Function("DeleteAllStudents")]
+        public async Task<IActionResult> DeleteAllStudents(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "organizations/{orgId}/students")] HttpRequest req,
+            int orgId)
+        {
+            _logger.LogInformation("DeleteAllStudents function triggered for organization: {OrgId}", orgId);
+
+            try
+            {
+                if (!int.TryParse(req.Query["userId"], out int userId))
+                {
+                    return new BadRequestObjectResult(new StudentResponse
+                    {
+                        Success = false,
+                        Message = "User ID is required."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", userId);
+                permCmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new StudentResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new StudentResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can delete all students."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                // First unassign any uniforms assigned to students in this org
+                await using var unassignCmd = new SqlCommand(
+                    "UPDATE [dbo].[Uniforms] SET AssignedStudentId = NULL, IsCheckedOut = 0 WHERE OrganizationId = @OrgId",
+                    connection);
+                unassignCmd.Parameters.AddWithValue("@OrgId", orgId);
+                await unassignCmd.ExecuteNonQueryAsync();
+
+                // Now delete all students
+                await using var cmd = new SqlCommand(
+                    "DELETE FROM [dbo].[Students] WHERE OrganizationId = @OrgId",
+                    connection);
+                cmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                return new OkObjectResult(new StudentResponse
+                {
+                    Success = true,
+                    Message = $"Successfully deleted {rowsAffected} students."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting all students.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
         #endregion
 
         #region Helper Methods

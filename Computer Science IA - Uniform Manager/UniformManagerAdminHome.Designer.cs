@@ -35,6 +35,8 @@
             importUniformsToolStripMenuItem = new ToolStripMenuItem();
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
+            deleteAllUniformsToolStripMenuItem = new ToolStripMenuItem();
+            deleteAllStudentsToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
             switchOrganizationToolStripMenuItem = new ToolStripMenuItem();
             joinOrganizationToolStripMenuItem = new ToolStripMenuItem();
@@ -144,9 +146,24 @@
             // 
             // editToolStripMenuItem
             // 
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(39, 22);
             editToolStripMenuItem.Text = "Edit";
+            // 
+            // deleteAllUniformsToolStripMenuItem
+            // 
+            deleteAllUniformsToolStripMenuItem.Name = "deleteAllUniformsToolStripMenuItem";
+            deleteAllUniformsToolStripMenuItem.Size = new Size(180, 22);
+            deleteAllUniformsToolStripMenuItem.Text = "Delete All Uniforms...";
+            deleteAllUniformsToolStripMenuItem.Click += DeleteAllUniformsToolStripMenuItem_Click;
+            // 
+            // deleteAllStudentsToolStripMenuItem
+            // 
+            deleteAllStudentsToolStripMenuItem.Name = "deleteAllStudentsToolStripMenuItem";
+            deleteAllStudentsToolStripMenuItem.Size = new Size(180, 22);
+            deleteAllStudentsToolStripMenuItem.Text = "Delete All Students...";
+            deleteAllStudentsToolStripMenuItem.Click += DeleteAllStudentsToolStripMenuItem_Click;
             // 
             // orgToolStripMenuItem
             // 
@@ -674,6 +691,8 @@
         private ToolStripMenuItem joinOrganizationToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem organizationInfoToolStripMenuItem;
+        private ToolStripMenuItem deleteAllUniformsToolStripMenuItem;
+        private ToolStripMenuItem deleteAllStudentsToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;
         private Panel panelUniforms;
         private DataGridView dataGridViewUniforms;
