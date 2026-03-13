@@ -703,10 +703,61 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
-            cmbType.SelectedIndex = 0;
 
-            var lblSize = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
-            var numSize = new NumericUpDown { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), Minimum = 1, Maximum = 100, Value = 40 };
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20) };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
+
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(240, 100), Size = new System.Drawing.Size(50, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl" });
+
+            cmbType.SelectedIndexChanged += (s, ev) => {
+                int type = cmbType.SelectedIndex;
+
+                txtSize1.Visible = true;
+                cmbSize1.Visible = false;
+                lblSize2.Visible = false;
+                txtSize2.Visible = false;
+                cmbSize2.Visible = false;
+
+                if (type == 6) // Pants
+                {
+                    lblSize1.Text = "Width:";
+                    lblSize2.Text = "Length:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 3) // Marching Coat
+                {
+                    lblSize1.Text = "Number Size:";
+                    lblSize2.Text = "Sleeve:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 2) // Hat
+                {
+                    lblSize1.Text = "Size:";
+                    txtSize1.Visible = false;
+                    cmbSize1.Visible = true;
+                    if (cmbSize1.SelectedIndex == -1) cmbSize1.SelectedIndex = 0;
+                }
+                else if (type == 0) // Concert Coat
+                {
+                    lblSize1.Text = "Number Size:";
+                    lblSize2.Text = "Letter:";
+                    lblSize2.Visible = true;
+                    cmbSize2.Visible = true;
+                    if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
+                }
+                else
+                {
+                    lblSize1.Text = "Size:";
+                }
+            };
+            cmbType.SelectedIndex = 0;
 
             var btnCreate = new Button
             {
@@ -727,7 +778,8 @@ namespace Computer_Science_IA___Uniform_Manager
             addForm.Controls.AddRange(new Control[] {
                 lblUniformId, txtUniformId,
                 lblType, cmbType,
-                lblSize, numSize,
+                lblSize1, txtSize1, cmbSize1,
+                lblSize2, txtSize2, cmbSize2,
                 btnCreate, btnCancel
             });
             addForm.AcceptButton = btnCreate;
@@ -742,11 +794,42 @@ namespace Computer_Science_IA___Uniform_Manager
                     return;
                 }
 
-                await CreateUniformAsync(txtUniformId.Text.Trim(), cmbType.SelectedIndex, (int)numSize.Value);
+                string finalSize = "";
+                int type = cmbType.SelectedIndex;
+
+                if (type == 2) // Hat
+                {
+                    finalSize = cmbSize1.Text;
+                }
+                else 
+                {
+                    if (string.IsNullOrWhiteSpace(txtSize1.Text))
+                    {
+                        MessageBox.Show("Please enter a size.", "Validation Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    
+                    finalSize = txtSize1.Text.Trim();
+                    if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    {
+                        finalSize += $"x{txtSize2.Text.Trim()}";
+                    }
+                    else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    {
+                        finalSize += $" {txtSize2.Text.Trim()}";
+                    }
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
+                    {
+                        finalSize += $" {cmbSize2.Text}";
+                    }
+                }
+
+                await CreateUniformAsync(txtUniformId.Text.Trim(), type, finalSize);
             }
         }
 
-        private async Task CreateUniformAsync(string uniformId, int uniformType, int size)
+        private async Task CreateUniformAsync(string uniformId, int uniformType, string size)
         {
             try
             {
@@ -806,7 +889,7 @@ namespace Computer_Science_IA___Uniform_Manager
             var selectedRow = dataGridViewUniforms.SelectedRows[0];
             string uniformId = selectedRow.Cells["UniformIdentifier"].Value.ToString()!;
             int uniformType = Convert.ToInt32(selectedRow.Cells["UniformType"].Value);
-            int size = Convert.ToInt32(selectedRow.Cells["Size"].Value);
+            string size = selectedRow.Cells["Size"].Value.ToString()!;
 
             using var editForm = new Form();
             editForm.Text = $"Edit Uniform - {uniformId}";
@@ -835,10 +918,97 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
+
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20) };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
+
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(240, 100), Size = new System.Drawing.Size(50, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl" });
+
+            // Different clothing types have different size formats, so adjust visible controls based on type
+            cmbType.SelectedIndexChanged += (s, ev) => {
+                int type = cmbType.SelectedIndex;
+
+                txtSize1.Visible = true;
+                cmbSize1.Visible = false;
+                lblSize2.Visible = false;
+                txtSize2.Visible = false;
+                cmbSize2.Visible = false;
+
+                if (type == 6) // Pants
+                {
+                    lblSize1.Text = "Width:";
+                    lblSize2.Text = "Length:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 3) // Marching Coat
+                {
+                    lblSize1.Text = "Number Size:";
+                    lblSize2.Text = "Sleeve:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 2) // Hat
+                {
+                    lblSize1.Text = "Size:";
+                    txtSize1.Visible = false;
+                    cmbSize1.Visible = true;
+                    if (cmbSize1.SelectedIndex == -1) cmbSize1.SelectedIndex = 0;
+                }
+                else if (type == 0) // Concert Coat
+                {
+                    lblSize1.Text = "Number Size:";
+                    lblSize2.Text = "Sleeve:";
+                    lblSize2.Visible = true;
+                    cmbSize2.Visible = true;
+                    if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
+                }
+                else
+                {
+                    lblSize1.Text = "Size:";
+                }
+            };
             cmbType.SelectedIndex = uniformType;
 
-            var lblSize = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
-            var numSize = new NumericUpDown { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), Minimum = 1, Maximum = 100, Value = size };
+            // Parse size string to populate text boxes
+            if (uniformType == 6 && size.Contains("x"))
+            {
+                var parts = size.Split('x');
+                txtSize1.Text = parts[0].Trim();
+                if (parts.Length > 1) txtSize2.Text = parts[1].Trim();
+            }
+            else if (uniformType == 3 && size.Contains(" "))
+            {
+                var parts = size.Split(new[] { ' ' }, 2);
+                txtSize1.Text = parts[0].Trim();
+                if (parts.Length > 1) txtSize2.Text = parts[1].Trim();
+            }
+            else if (uniformType == 0 && size.Contains(" "))
+            {
+                var parts = size.Split(new[] { ' ' }, 2);
+                txtSize1.Text = parts[0].Trim();
+                if (parts.Length > 1) 
+                {
+                    string letter = parts[1].Trim().ToLower();
+                    if (cmbSize2.Items.Contains(letter))
+                        cmbSize2.SelectedItem = letter;
+                }
+            }
+            else if (uniformType == 2)
+            {
+                string hatSize = size.ToLower();
+                if (cmbSize1.Items.Contains(hatSize))
+                    cmbSize1.SelectedItem = hatSize;
+            }
+            else
+            {
+                txtSize1.Text = size;
+            }
 
             var btnSave = new Button
             {
@@ -859,7 +1029,8 @@ namespace Computer_Science_IA___Uniform_Manager
             editForm.Controls.AddRange(new Control[] {
                 lblUniformId, txtUniformId,
                 lblType, cmbType,
-                lblSize, numSize,
+                lblSize1, txtSize1, cmbSize1,
+                lblSize2, txtSize2, cmbSize2,
                 btnSave, btnCancel
             });
             editForm.AcceptButton = btnSave;
@@ -867,11 +1038,35 @@ namespace Computer_Science_IA___Uniform_Manager
 
             if (editForm.ShowDialog() == DialogResult.OK)
             {
-                await UpdateUniformAsync(uniformId, cmbType.SelectedIndex, (int)numSize.Value);
+                string finalSize = "";
+                int type = cmbType.SelectedIndex;
+
+                if (type == 2) // Hat
+                {
+                    finalSize = cmbSize1.Text;
+                }
+                else 
+                {
+                    finalSize = txtSize1.Text.Trim();
+                    if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    {
+                        finalSize += $"x{txtSize2.Text.Trim()}";
+                    }
+                    else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    {
+                        finalSize += $" {txtSize2.Text.Trim()}";
+                    }
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
+                    {
+                        finalSize += $" {cmbSize2.Text}";
+                    }
+                }
+
+                await UpdateUniformAsync(uniformId, type, finalSize);
             }
         }
 
-        private async Task UpdateUniformAsync(string uniformId, int uniformType, int size)
+        private async Task UpdateUniformAsync(string uniformId, int uniformType, string size)
         {
             try
             {
@@ -1970,16 +2165,16 @@ namespace Computer_Science_IA___Uniform_Manager
                             continue;
                         }
 
-                        // Parse size
-                        if (!int.TryParse(sizeStr, out int size) || size < 1 || size > 100)
+                        // Validate size
+                        if (string.IsNullOrWhiteSpace(sizeStr))
                         {
-                            errors.Add($"Row {i + 1} ({uniformId}): Invalid size '{sizeStr}'");
+                            errors.Add($"Row {i + 1} ({uniformId}): Missing size");
                             errorCount++;
                             continue;
                         }
 
                         // Create uniform via API
-                        var result = await CreateUniformViaImport(uniformId, uniformType, size);
+                        var result = await CreateUniformViaImport(uniformId, uniformType, sizeStr);
                         if (result)
                         {
                             successCount++;
@@ -2024,7 +2219,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 
-        private async Task<bool> CreateUniformViaImport(string uniformId, int uniformType, int size)
+        private async Task<bool> CreateUniformViaImport(string uniformId, int uniformType, string size)
         {
             try
             {

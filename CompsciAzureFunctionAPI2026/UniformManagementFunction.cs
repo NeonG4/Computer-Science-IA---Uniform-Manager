@@ -434,10 +434,10 @@ namespace CompsciAzureFunctionAPI2026
                     cmd.Parameters.AddWithValue("@Type", request.UniformType.Value);
                 }
 
-                if (request.Size.HasValue)
+                if (request.Size != null)
                 {
                     updates.Add("Size = @Size");
-                    cmd.Parameters.AddWithValue("@Size", request.Size.Value);
+                    cmd.Parameters.AddWithValue("@Size", request.Size);
                 }
 
                 if (updates.Count == 0)
@@ -1150,7 +1150,7 @@ namespace CompsciAzureFunctionAPI2026
                 UniformIdentifier = reader.GetString(reader.GetOrdinal("UniformIdentifier")),
                 UniformType = uniformType,
                 UniformTypeName = ((UniformClothing)uniformType).ToString(),
-                Size = reader.GetInt32(reader.GetOrdinal("Size")),
+                Size = reader[reader.GetOrdinal("Size")].ToString() ?? string.Empty,
                 IsCheckedOut = reader.GetBoolean(reader.GetOrdinal("IsCheckedOut")),
                 AssignedStudentId = reader.IsDBNull(reader.GetOrdinal("AssignedStudentId"))
                     ? null

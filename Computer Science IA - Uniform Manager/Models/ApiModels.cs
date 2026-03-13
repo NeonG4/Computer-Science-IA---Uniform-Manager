@@ -51,7 +51,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
         public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int UniformType { get; set; }
-        public int Size { get; set; }
+        public string Size { get; set; } = string.Empty;
         public int RequestingUserId { get; set; }
     }
 
@@ -59,7 +59,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
     {
         public string UniformIdentifier { get; set; } = string.Empty;
         public int? UniformType { get; set; }
-        public int? Size { get; set; }
+        public string? Size { get; set; }
         public int RequestingUserId { get; set; }
     }
 
@@ -112,7 +112,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
         public string UniformIdentifier { get; set; } = string.Empty;
         public int UniformType { get; set; }
         public string UniformTypeName { get; set; } = string.Empty;
-        public int Size { get; set; }
+        public string Size { get; set; } = string.Empty;
         public bool IsCheckedOut { get; set; }
         public string? AssignedStudentId { get; set; }
         public int[] Conditions { get; set; } = Array.Empty<int>();
