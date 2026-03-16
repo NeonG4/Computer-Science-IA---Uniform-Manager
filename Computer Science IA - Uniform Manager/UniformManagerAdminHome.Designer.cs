@@ -35,6 +35,7 @@
             importUniformsToolStripMenuItem = new ToolStripMenuItem();
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
+            searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
             deleteAllUniformsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllStudentsToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
@@ -146,10 +147,17 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(39, 22);
             editToolStripMenuItem.Text = "Edit";
+            // 
+            // searchAndEditStudentToolStripMenuItem
+            // 
+            searchAndEditStudentToolStripMenuItem.Name = "searchAndEditStudentToolStripMenuItem";
+            searchAndEditStudentToolStripMenuItem.Size = new Size(200, 22);
+            searchAndEditStudentToolStripMenuItem.Text = "Search and Edit Student...";
+            searchAndEditStudentToolStripMenuItem.Click += SearchAndEditStudentToolStripMenuItem_Click;
             // 
             // deleteAllUniformsToolStripMenuItem
             // 
@@ -691,6 +699,7 @@
         private ToolStripMenuItem joinOrganizationToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem organizationInfoToolStripMenuItem;
+        private ToolStripMenuItem searchAndEditStudentToolStripMenuItem;
         private ToolStripMenuItem deleteAllUniformsToolStripMenuItem;
         private ToolStripMenuItem deleteAllStudentsToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;

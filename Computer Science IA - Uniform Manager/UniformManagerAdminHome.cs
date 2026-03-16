@@ -1807,7 +1807,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var editForm = new Form();
             editForm.Text = $"Edit Student - {studentId}";
-            editForm.Size = new System.Drawing.Size(400, 300);
+            editForm.Size = new System.Drawing.Size(400, 390);
             editForm.StartPosition = FormStartPosition.CenterParent;
             editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             editForm.MaximizeBox = false;
@@ -1845,11 +1845,84 @@ namespace Computer_Science_IA___Uniform_Manager
                 Value = grade 
             };
 
+            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 180), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+
+            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 210), Size = new System.Drawing.Size(100, 20) };
+            var cmbType = new ComboBox {
+                Location = new System.Drawing.Point(130, 208),
+                Size = new System.Drawing.Size(240, 20),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbType.Items.AddRange(new object[] {
+                "", "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "Marching Shorts", "Marching Socks", "Pants"
+            });
+
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 250), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 248), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 248), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
+
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(240, 250), Size = new System.Drawing.Size(50, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(290, 248), Size = new System.Drawing.Size(80, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(290, 248), Size = new System.Drawing.Size(80, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
+
+            cmbType.SelectedIndexChanged += (s, ev) => {
+                int type = cmbType.SelectedIndex - 1; // 0 is empty string
+
+                txtSize1.Visible = true;
+                cmbSize1.Visible = false;
+                lblSize2.Visible = false;
+                txtSize2.Visible = false;
+                cmbSize2.Visible = false;
+
+                if (type == -1) 
+                {
+                    lblSize1.Visible = false;
+                    txtSize1.Visible = false;
+                }
+                else if (type == 6) // Pants
+                {
+                    lblSize1.Text = "Width:";
+                    lblSize2.Text = "Length:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 3) // Marching Coat
+                {
+                    lblSize1.Text = "Num Size:";
+                    lblSize2.Text = "Sleeve:";
+                    lblSize2.Visible = true;
+                    txtSize2.Visible = true;
+                }
+                else if (type == 2) // Hat
+                {
+                    lblSize1.Text = "Size:";
+                    txtSize1.Visible = false;
+                    cmbSize1.Visible = true;
+                    if (cmbSize1.SelectedIndex == -1) cmbSize1.SelectedIndex = 0;
+                }
+                else if (type == 0) // Concert Coat
+                {
+                    lblSize1.Text = "Num Size:";
+                    lblSize2.Text = "Letter:";
+                    lblSize2.Visible = true;
+                    cmbSize2.Visible = true;
+                    if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
+                }
+                else
+                {
+                    lblSize1.Text = "Size:";
+                }
+            };
+            cmbType.SelectedIndex = 0;
+
             var btnSave = new Button
             {
                 Text = "Save Changes",
                 DialogResult = DialogResult.OK,
-                Location = new System.Drawing.Point(200, 200),
+                Location = new System.Drawing.Point(200, 300),
                 Size = new System.Drawing.Size(170, 35)
             };
 
@@ -1857,7 +1930,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new System.Drawing.Point(20, 200),
+                Location = new System.Drawing.Point(20, 300),
                 Size = new System.Drawing.Size(150, 35)
             };
 
@@ -1866,6 +1939,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 lblFirstName, txtFirstName,
                 lblLastName, txtLastName,
                 lblGrade, numGrade,
+                lblQuickAssign, lblType, cmbType,
+                lblSize1, txtSize1, cmbSize1,
+                lblSize2, txtSize2, cmbSize2,
                 btnSave, btnCancel
             });
             editForm.AcceptButton = btnSave;
@@ -1885,6 +1961,110 @@ namespace Computer_Science_IA___Uniform_Manager
                     txtFirstName.Text.Trim(), 
                     txtLastName.Text.Trim(), 
                     (int)numGrade.Value);
+
+                int type = cmbType.SelectedIndex - 1;
+                if (type != -1)
+                {
+                    string sizeQuery = "";
+                    if (type == 2) // Hat
+                    {
+                        sizeQuery = cmbSize1.Text;
+                    }
+                    else 
+                    {
+                        sizeQuery = txtSize1.Text.Trim();
+                        if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                        {
+                            sizeQuery += $"x{txtSize2.Text.Trim()}";
+                        }
+                        else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                        {
+                            sizeQuery += $" {txtSize2.Text.Trim()}";
+                        }
+                        else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
+                        {
+                            sizeQuery += $" {cmbSize2.Text}";
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(sizeQuery))
+                    {
+                        await ProcessQuickAssign(studentId, type, sizeQuery);
+                    }
+                }
+            }
+        }
+
+        private async Task ProcessQuickAssign(string studentId, int matchedType, string sizeQuery)
+        {
+            string? matchId = null;
+            sizeQuery = sizeQuery.ToLower();
+
+            foreach (DataGridViewRow row in dataGridViewUniforms.Rows)
+            {
+                string? assignedStudent = row.Cells["AssignedStudentId"].Value?.ToString();
+                if (!string.IsNullOrEmpty(assignedStudent)) continue;
+
+                int type = Convert.ToInt32(row.Cells["UniformType"].Value);
+                if (type != matchedType) continue;
+
+                string size = row.Cells["Size"].Value?.ToString()?.ToLower() ?? "";
+
+                if (size == sizeQuery)
+                {
+                    matchId = row.Cells["UniformIdentifier"].Value?.ToString();
+                    break;
+                }
+            }
+
+            // If no exact match, try prefix match (handling space or 'x')
+            if (string.IsNullOrEmpty(matchId))
+            {
+                foreach (DataGridViewRow row in dataGridViewUniforms.Rows)
+                {
+                    string? assignedStudent = row.Cells["AssignedStudentId"].Value?.ToString();
+                    if (!string.IsNullOrEmpty(assignedStudent)) continue;
+
+                    int type = Convert.ToInt32(row.Cells["UniformType"].Value);
+                    if (type != matchedType) continue;
+
+                    string size = row.Cells["Size"].Value?.ToString()?.ToLower() ?? "";
+
+                    if (type == 6 && size.StartsWith(sizeQuery + "x"))
+                    {
+                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
+                        break;
+                    }
+                    else if ((type == 3 || type == 0) && size.StartsWith(sizeQuery + " "))
+                    {
+                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
+                        break;
+                    }
+                    else if (size.StartsWith(sizeQuery))
+                    {
+                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(matchId))
+            {
+                await AssignUniformAsync(matchId, studentId);
+            }
+            else
+            {
+                string typeName = matchedType switch {
+                    0 => "Concert Coat",
+                    1 => "Drum Major Coat",
+                    2 => "Hat",
+                    3 => "Marching Coat",
+                    4 => "Marching Shorts",
+                    5 => "Marching Socks",
+                    6 => "Pants",
+                    _ => "Uniform"
+                };
+                MessageBox.Show($"No available empty {typeName} found matching size '{sizeQuery}'.", "Quick Assign", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -2105,6 +2285,82 @@ namespace Computer_Science_IA___Uniform_Manager
         #endregion
 
         #region Menu Event Handlers
+
+        private async void SearchAndEditStudentToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel > 1) // Viewers cannot edit
+            {
+                MessageBox.Show("Only administrators and users can view and edit student details.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using var searchForm = new Form();
+            searchForm.Text = "Find Student";
+            searchForm.Size = new Size(400, 180);
+            searchForm.StartPosition = FormStartPosition.CenterParent;
+            searchForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+            searchForm.MaximizeBox = false;
+            searchForm.MinimizeBox = false;
+
+            var lblInfo = new Label
+            {
+                Text = "Enter Student ID to view and edit information:",
+                Location = new Point(20, 20),
+                Size = new Size(350, 20)
+            };
+
+            var txtStudentId = new TextBox
+            {
+                Location = new Point(20, 50),
+                Size = new Size(340, 20),
+                CharacterCasing = CharacterCasing.Upper
+            };
+
+            var btnSearch = new Button
+            {
+                Text = "Find and Edit",
+                DialogResult = DialogResult.OK,
+                Location = new Point(190, 90),
+                Size = new Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(20, 90),
+                Size = new Size(150, 35)
+            };
+
+            searchForm.Controls.AddRange(new Control[] { lblInfo, txtStudentId, btnSearch, btnCancel });
+            searchForm.AcceptButton = btnSearch;
+            searchForm.CancelButton = btnCancel;
+
+            if (searchForm.ShowDialog() == DialogResult.OK)
+            {
+                string searchId = txtStudentId.Text.Trim();
+                if (string.IsNullOrWhiteSpace(searchId)) return;
+
+                bool found = false;
+                foreach (DataGridViewRow row in dataGridViewStudents.Rows)
+                {
+                    if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(searchId, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        dataGridViewStudents.ClearSelection();
+                        row.Selected = true;
+
+                        await EditSelectedStudent();
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    MessageBox.Show($"Student '{searchId}' not found in this organization.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
 
         private void SwitchOrganizationToolStripMenuItem_Click(object sender, EventArgs e)
         {
