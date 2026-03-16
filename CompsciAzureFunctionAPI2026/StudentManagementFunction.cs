@@ -712,6 +712,106 @@ namespace CompsciAzureFunctionAPI2026
             }
         }
 
+        /// <summary>
+        /// POST promote students by one grade (12th graders deleted if requested) - Admin only
+        /// </summary>
+        [Function("PromoteStudents")]
+        public async Task<IActionResult> PromoteStudents(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req)
+        {
+            _logger.LogInformation("PromoteStudents function triggered.");
+
+            try
+            {
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var request = JsonSerializer.Deserialize<PromoteStudentsRequest>(requestBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (request == null)
+                {
+                    return new BadRequestObjectResult(new StudentResponse
+                    {
+                        Success = false,
+                        Message = "Invalid request."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                permCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null || (int)permResult != 0)
+                {
+                    return new ObjectResult(new StudentResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can promote students."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                await using var transaction = connection.BeginTransaction();
+                try
+                {
+                    if (request.RemoveSeniors)
+                    {
+                        // Unassign uniforms from seniors
+                        await using var unassignCmd = new SqlCommand(
+                            @"UPDATE u SET AssignedStudentId = NULL, IsCheckedOut = 0 
+                              FROM [dbo].[Uniforms] u
+                              INNER JOIN [dbo].[Students] s ON u.AssignedStudentId = s.StudentIdentifier AND u.OrganizationId = s.OrganizationId
+                              WHERE s.Grade >= 12 AND s.OrganizationId = @OrgId", connection, transaction);
+                        unassignCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+                        await unassignCmd.ExecuteNonQueryAsync();
+
+                        // Delete seniors
+                        await using var deleteCmd = new SqlCommand(
+                            "DELETE FROM [dbo].[Students] WHERE Grade >= 12 AND OrganizationId = @OrgId", connection, transaction);
+                        deleteCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+                        await deleteCmd.ExecuteNonQueryAsync();
+                    }
+
+                    // Promote remaining
+                    await using var promoteCmd = new SqlCommand(
+                        "UPDATE [dbo].[Students] SET Grade = Grade + 1, LastModified = GETDATE(), ModifiedBy = @UserId WHERE Grade < 12 AND OrganizationId = @OrgId", connection, transaction);
+                    promoteCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+                    promoteCmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
+                    await promoteCmd.ExecuteNonQueryAsync();
+
+                    await transaction.CommitAsync();
+
+                    return new OkObjectResult(new StudentResponse
+                    {
+                        Success = true,
+                        Message = "Students promoted successfully."
+                    });
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error promoting students.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
         #endregion
 
         #region Helper Methods

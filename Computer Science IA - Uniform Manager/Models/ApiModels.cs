@@ -142,6 +142,13 @@ namespace Computer_Science_IA___Uniform_Manager.Models
         public int RequestingUserId { get; set; }
     }
 
+    public class PromoteStudentsRequest
+    {
+        public int OrganizationId { get; set; }
+        public int RequestingUserId { get; set; }
+        public bool RemoveSeniors { get; set; }
+    }
+
     public class StudentResponse
     {
         public bool Success { get; set; }

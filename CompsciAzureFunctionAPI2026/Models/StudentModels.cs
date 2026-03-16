@@ -60,4 +60,14 @@ namespace CompsciAzureFunctionAPI2026.Models
         public DateTime CreatedDate { get; set; }
         public DateTime? LastModified { get; set; }
     }
+
+    /// <summary>
+    /// Request to promote students to the next grade
+    /// </summary>
+    public class PromoteStudentsRequest
+    {
+        public int OrganizationId { get; set; }
+        public int RequestingUserId { get; set; }
+        public bool RemoveSeniors { get; set; }
+    }
 }

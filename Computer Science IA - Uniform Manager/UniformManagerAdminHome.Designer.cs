@@ -36,6 +36,7 @@
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
+            promoteStudentsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllUniformsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllStudentsToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
@@ -147,7 +148,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, promoteStudentsToolStripMenuItem, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(39, 22);
             editToolStripMenuItem.Text = "Edit";
@@ -158,6 +159,13 @@
             searchAndEditStudentToolStripMenuItem.Size = new Size(200, 22);
             searchAndEditStudentToolStripMenuItem.Text = "Search and Edit Student...";
             searchAndEditStudentToolStripMenuItem.Click += SearchAndEditStudentToolStripMenuItem_Click;
+            // 
+            // promoteStudentsToolStripMenuItem
+            // 
+            promoteStudentsToolStripMenuItem.Name = "promoteStudentsToolStripMenuItem";
+            promoteStudentsToolStripMenuItem.Size = new Size(200, 22);
+            promoteStudentsToolStripMenuItem.Text = "Age Students by a Grade...";
+            promoteStudentsToolStripMenuItem.Click += PromoteStudentsToolStripMenuItem_Click;
             // 
             // deleteAllUniformsToolStripMenuItem
             // 
@@ -700,6 +708,7 @@
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem organizationInfoToolStripMenuItem;
         private ToolStripMenuItem searchAndEditStudentToolStripMenuItem;
+        private ToolStripMenuItem promoteStudentsToolStripMenuItem;
         private ToolStripMenuItem deleteAllUniformsToolStripMenuItem;
         private ToolStripMenuItem deleteAllStudentsToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;

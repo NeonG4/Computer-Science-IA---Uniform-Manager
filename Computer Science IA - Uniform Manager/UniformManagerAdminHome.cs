@@ -2334,9 +2334,66 @@ namespace Computer_Science_IA___Uniform_Manager
             return confirmForm.ShowDialog() == DialogResult.OK;
         }
 
-        #endregion
+        private async void PromoteStudentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can promote students.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-        #region Menu Event Handlers
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to age all students by a grade?\n\nThis will increase the grade of all students by 1.\n\nOptionally, you can also remove seniors (12th grade) and unassign their uniforms.",
+                "Confirm Age Students",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            var removeSeniorsResult = MessageBox.Show(
+                "Do you want to remove seniors (12th grade) and unassign their uniforms?",
+                "Remove Seniors",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            try
+            {
+                var request = new PromoteStudentsRequest
+                {
+                    OrganizationId = _currentOrganization.OrganizationId,
+                    RequestingUserId = _currentUser!.UserId,
+                    RemoveSeniors = removeSeniorsResult == DialogResult.Yes
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/PromoteStudents", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "Students aged successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadAllData();
+                }
+                else
+                {
+                    MessageBox.Show($"Error aging students:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error aging students:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         private async void SearchAndEditStudentToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -2503,7 +2560,8 @@ namespace Computer_Science_IA___Uniform_Manager
                 MessageBox.Show(
                     "Only administrators can import uniforms.",
                     "Insufficient Permissions",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
