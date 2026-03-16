@@ -747,7 +747,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 else if (type == 0) // Concert Coat
                 {
                     lblSize1.Text = "Number Size:";
-                    lblSize2.Text = "Letter:";
+                    lblSize2.Text = "Sleeve:";
                     lblSize2.Visible = true;
                     cmbSize2.Visible = true;
                     if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
@@ -810,18 +810,39 @@ namespace Computer_Science_IA___Uniform_Manager
                         return;
                     }
                     
-                    finalSize = txtSize1.Text.Trim();
-                    if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    string s1 = txtSize1.Text.Trim();
+                    string s2 = txtSize2.Text.Trim();
+
+                    // Parse combined size if put entirely in the first box
+                    if (type == 6 && string.IsNullOrWhiteSpace(s2) && (s1.ToLower().Contains("x") || s1.Contains(" ")))
                     {
-                        finalSize += $"x{txtSize2.Text.Trim()}";
+                        var parts = s1.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
                     }
-                    else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    else if ((type == 3 || type == 0) && string.IsNullOrWhiteSpace(s2) && s1.Contains(" "))
                     {
-                        finalSize += $" {txtSize2.Text.Trim()}";
+                        var parts = s1.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
+                    }
+
+                    finalSize = s1;
+                    if (type == 6 && !string.IsNullOrWhiteSpace(s2))
+                    {
+                        finalSize += $"x{s2}";
+                    }
+                    else if (type == 3 && !string.IsNullOrWhiteSpace(s2))
+                    {
+                        finalSize += $" {s2}";
                     }
                     else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
                     {
                         finalSize += $" {cmbSize2.Text}";
+                    }
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(s2) && string.IsNullOrWhiteSpace(cmbSize2.Text))
+                    {
+                        finalSize += $" {s2}";
                     }
                 }
 
@@ -976,22 +997,22 @@ namespace Computer_Science_IA___Uniform_Manager
             cmbType.SelectedIndex = uniformType;
 
             // Parse size string to populate text boxes
-            if (uniformType == 6 && size.Contains("x"))
+            if (uniformType == 6 && (size.ToLower().Contains("x") || size.Contains(" ")))
             {
-                var parts = size.Split('x');
-                txtSize1.Text = parts[0].Trim();
+                var parts = size.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) txtSize1.Text = parts[0].Trim();
                 if (parts.Length > 1) txtSize2.Text = parts[1].Trim();
             }
             else if (uniformType == 3 && size.Contains(" "))
             {
-                var parts = size.Split(new[] { ' ' }, 2);
-                txtSize1.Text = parts[0].Trim();
+                var parts = size.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) txtSize1.Text = parts[0].Trim();
                 if (parts.Length > 1) txtSize2.Text = parts[1].Trim();
             }
             else if (uniformType == 0 && size.Contains(" "))
             {
-                var parts = size.Split(new[] { ' ' }, 2);
-                txtSize1.Text = parts[0].Trim();
+                var parts = size.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) txtSize1.Text = parts[0].Trim();
                 if (parts.Length > 1) 
                 {
                     string letter = parts[1].Trim().ToLower();
@@ -1047,18 +1068,39 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else 
                 {
-                    finalSize = txtSize1.Text.Trim();
-                    if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    string s1 = txtSize1.Text.Trim();
+                    string s2 = txtSize2.Text.Trim();
+
+                    // Parse combined size if put entirely in the first box
+                    if (type == 6 && string.IsNullOrWhiteSpace(s2) && (s1.ToLower().Contains("x") || s1.Contains(" ")))
                     {
-                        finalSize += $"x{txtSize2.Text.Trim()}";
+                        var parts = s1.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
                     }
-                    else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                    else if ((type == 3 || type == 0) && string.IsNullOrWhiteSpace(s2) && s1.Contains(" "))
                     {
-                        finalSize += $" {txtSize2.Text.Trim()}";
+                        var parts = s1.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
+                    }
+
+                    finalSize = s1;
+                    if (type == 6 && !string.IsNullOrWhiteSpace(s2))
+                    {
+                        finalSize += $"x{s2}";
+                    }
+                    else if (type == 3 && !string.IsNullOrWhiteSpace(s2))
+                    {
+                        finalSize += $" {s2}";
                     }
                     else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
                     {
                         finalSize += $" {cmbSize2.Text}";
+                    }
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(s2) && string.IsNullOrWhiteSpace(cmbSize2.Text))
+                    {
+                        finalSize += $" {s2}";
                     }
                 }
 
@@ -1869,7 +1911,7 @@ namespace Computer_Science_IA___Uniform_Manager
             cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
             cmbType.SelectedIndexChanged += (s, ev) => {
-                int type = cmbType.SelectedIndex - 1; // 0 is empty string
+                int type = cmbType.SelectedIndex;
 
                 txtSize1.Visible = true;
                 cmbSize1.Visible = false;
@@ -1877,12 +1919,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 txtSize2.Visible = false;
                 cmbSize2.Visible = false;
 
-                if (type == -1) 
-                {
-                    lblSize1.Visible = false;
-                    txtSize1.Visible = false;
-                }
-                else if (type == 6) // Pants
+                if (type == 6) // Pants
                 {
                     lblSize1.Text = "Width:";
                     lblSize2.Text = "Length:";
@@ -1891,7 +1928,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else if (type == 3) // Marching Coat
                 {
-                    lblSize1.Text = "Num Size:";
+                    lblSize1.Text = "Number Size:";
                     lblSize2.Text = "Sleeve:";
                     lblSize2.Visible = true;
                     txtSize2.Visible = true;
@@ -1905,8 +1942,8 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else if (type == 0) // Concert Coat
                 {
-                    lblSize1.Text = "Num Size:";
-                    lblSize2.Text = "Letter:";
+                    lblSize1.Text = "Number Size:";
+                    lblSize2.Text = "Sleeve:";
                     lblSize2.Visible = true;
                     cmbSize2.Visible = true;
                     if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
@@ -1972,18 +2009,39 @@ namespace Computer_Science_IA___Uniform_Manager
                     }
                     else 
                     {
-                        sizeQuery = txtSize1.Text.Trim();
-                        if (type == 6 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                        string s1 = txtSize1.Text.Trim();
+                        string s2 = txtSize2.Text.Trim();
+
+                        // Parse combined size if put entirely in the first box
+                        if (type == 6 && string.IsNullOrWhiteSpace(s2) && (s1.ToLower().Contains("x") || s1.Contains(" ")))
                         {
-                            sizeQuery += $"x{txtSize2.Text.Trim()}";
+                            var parts = s1.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length > 0) s1 = parts[0].Trim();
+                            if (parts.Length > 1) s2 = parts[1].Trim();
                         }
-                        else if (type == 3 && !string.IsNullOrWhiteSpace(txtSize2.Text))
+                        else if ((type == 3 || type == 0) && string.IsNullOrWhiteSpace(s2) && s1.Contains(" "))
                         {
-                            sizeQuery += $" {txtSize2.Text.Trim()}";
+                            var parts = s1.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length > 0) s1 = parts[0].Trim();
+                            if (parts.Length > 1) s2 = parts[1].Trim();
+                        }
+
+                        sizeQuery = s1;
+                        if (type == 6 && !string.IsNullOrWhiteSpace(s2))
+                        {
+                            sizeQuery += $"x{s2}";
+                        }
+                        else if (type == 3 && !string.IsNullOrWhiteSpace(s2))
+                        {
+                            sizeQuery += $" {s2}";
                         }
                         else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
                         {
                             sizeQuery += $" {cmbSize2.Text}";
+                        }
+                        else if (type == 0 && !string.IsNullOrWhiteSpace(s2) && string.IsNullOrWhiteSpace(cmbSize2.Text))
+                        {
+                            sizeQuery += $" {s2}";
                         }
                     }
 
@@ -2015,35 +2073,29 @@ namespace Computer_Science_IA___Uniform_Manager
                     matchId = row.Cells["UniformIdentifier"].Value?.ToString();
                     break;
                 }
-            }
-
-            // If no exact match, try prefix match (handling space or 'x')
-            if (string.IsNullOrEmpty(matchId))
-            {
-                foreach (DataGridViewRow row in dataGridViewUniforms.Rows)
+                else
                 {
-                    string? assignedStudent = row.Cells["AssignedStudentId"].Value?.ToString();
-                    if (!string.IsNullOrEmpty(assignedStudent)) continue;
+                    // Handle pants size with space or 'x' separator
+                    var sizeParts = size.Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var queryParts = sizeQuery.Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    int type = Convert.ToInt32(row.Cells["UniformType"].Value);
-                    if (type != matchedType) continue;
+                    if (sizeParts.Length == queryParts.Length)
+                    {
+                        bool isMatch = true;
+                        for (int i = 0; i < sizeParts.Length; i++)
+                        {
+                            if (!sizeParts[i].StartsWith(queryParts[i], StringComparison.OrdinalIgnoreCase))
+                            {
+                                isMatch = false;
+                                break;
+                            }
+                        }
 
-                    string size = row.Cells["Size"].Value?.ToString()?.ToLower() ?? "";
-
-                    if (type == 6 && size.StartsWith(sizeQuery + "x"))
-                    {
-                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
-                        break;
-                    }
-                    else if ((type == 3 || type == 0) && size.StartsWith(sizeQuery + " "))
-                    {
-                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
-                        break;
-                    }
-                    else if (size.StartsWith(sizeQuery))
-                    {
-                        matchId = row.Cells["UniformIdentifier"].Value?.ToString();
-                        break;
+                        if (isMatch)
+                        {
+                            matchId = row.Cells["UniformIdentifier"].Value?.ToString();
+                            break;
+                        }
                     }
                 }
             }
