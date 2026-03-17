@@ -66,6 +66,13 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             try
             {
+                if (_currentUser == null || _currentUser.UserId <= 0)
+                {
+                    MessageBox.Show("Your session has expired. Please log in again.",
+                        "Login Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 // Map combo box index to account level (reverse order in UI)
                 int accountLevel = comboBoxRole.SelectedIndex switch
                 {
@@ -88,7 +95,24 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 var response = await httpClient.PostAsync($"{API_BASE_URL}/JoinOrganization", content);
                 var jsonString = await response.Content.ReadAsStringAsync();
-                
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorDetails = string.IsNullOrWhiteSpace(jsonString)
+                        ? $"Server returned {response.StatusCode}."
+                        : jsonString;
+                    MessageBox.Show($"Failed to join organization:\n\n{errorDetails}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(jsonString))
+                {
+                    MessageBox.Show("Server returned an empty response.",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 var result = JsonSerializer.Deserialize<JoinOrganizationResponse>(jsonString, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true

@@ -55,21 +55,36 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 if (result != null && result.Success)
                 {
-                    this.Hide();
-                    
-                    // Show organization selector
-                    var orgSelector = new OrganizationSelectorForm(result.User!);
-                    var dialogResult = orgSelector.ShowDialog();
-                    
-                    if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                    if (result.User == null || result.User.UserId <= 0)
                     {
-                        // Open main form with selected organization
-                        UniformManagerAdminHome home = new UniformManagerAdminHome(
-                            result.User!, 
-                            orgSelector.SelectedOrganization);
-                        home.ShowDialog();
+                        MessageBox.Show("Login succeeded but user data is missing. Please log in again.",
+                            "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
                     }
-                    
+
+                    this.Hide();
+
+                    try
+                    {
+                        // Show organization selector
+                        var orgSelector = new OrganizationSelectorForm(result.User);
+                        var dialogResult = orgSelector.ShowDialog();
+
+                        if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                        {
+                            // Open main form with selected organization
+                            UniformManagerAdminHome home = new UniformManagerAdminHome(
+                                result.User,
+                                orgSelector.SelectedOrganization);
+                            home.ShowDialog();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error opening organization selection:\n\n{ex.Message}",
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+
                     this.Close();
                 }
                 else
@@ -207,21 +222,36 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 if (result != null && result.Success)
                 {
-                    this.Hide();
-                    
-                    // Show organization selector
-                    var orgSelector = new OrganizationSelectorForm(result.User!);
-                    var dialogResult = orgSelector.ShowDialog();
-                    
-                    if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                    if (result.User == null || result.User.UserId <= 0)
                     {
-                        // Open main form with selected organization
-                        UniformManagerAdminHome home = new UniformManagerAdminHome(
-                            result.User!, 
-                            orgSelector.SelectedOrganization);
-                        home.ShowDialog();
+                        MessageBox.Show("Account created but user data is missing. Please log in manually.",
+                            "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
                     }
-                    
+
+                    this.Hide();
+
+                    try
+                    {
+                        // Show organization selector
+                        var orgSelector = new OrganizationSelectorForm(result.User);
+                        var dialogResult = orgSelector.ShowDialog();
+
+                        if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
+                        {
+                            // Open main form with selected organization
+                            UniformManagerAdminHome home = new UniformManagerAdminHome(
+                                result.User,
+                                orgSelector.SelectedOrganization);
+                            home.ShowDialog();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Account created but failed to open organization selection:\n\n{ex.Message}\n\nPlease log in manually.",
+                            "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
                     this.Close();
                 }
                 else

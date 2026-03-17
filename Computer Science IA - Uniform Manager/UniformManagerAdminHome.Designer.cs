@@ -37,6 +37,7 @@
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
+            checkMissingAssignmentsToolStripMenuItem = new ToolStripMenuItem();
             promoteStudentsToolStripMenuItem = new ToolStripMenuItem();
             unassignAllUniformsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllUniformsToolStripMenuItem = new ToolStripMenuItem();

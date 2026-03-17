@@ -266,6 +266,24 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
+                if (request.UserId <= 0)
+                {
+                    return new BadRequestObjectResult(new JoinOrganizationResponse
+                    {
+                        Success = false,
+                        Message = "User ID is required. Please log in again."
+                    });
+                }
+
+                if (request.RequestedAccountLevel < 0 || request.RequestedAccountLevel > 2)
+                {
+                    return new BadRequestObjectResult(new JoinOrganizationResponse
+                    {
+                        Success = false,
+                        Message = "Requested account level is invalid."
+                    });
+                }
+
                 string? connectionString = _configuration.GetConnectionString("SqlConnection");
                 if (string.IsNullOrEmpty(connectionString))
                 {

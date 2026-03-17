@@ -27,8 +27,34 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private async void OrganizationSelectorForm_Load(object sender, EventArgs e)
         {
-            labelUserInfo.Text = $"Logged in as: {_currentUser.FirstName} {_currentUser.LastName}";
-            await LoadOrganizationsAsync();
+            try
+            {
+                if (_currentUser == null || _currentUser.UserId <= 0)
+                {
+                    MessageBox.Show("Your session has expired. Please log in again.",
+                        "Login Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    DialogResult = DialogResult.Cancel;
+                    Close();
+                    return;
+                }
+
+                var firstName = _currentUser.FirstName ?? string.Empty;
+                var lastName = _currentUser.LastName ?? string.Empty;
+                var displayName = string.Join(" ", new[] { firstName, lastName }.Where(n => !string.IsNullOrWhiteSpace(n)));
+                labelUserInfo.Text = string.IsNullOrWhiteSpace(displayName)
+                    ? "Logged in as: (unknown)"
+                    : $"Logged in as: {displayName}";
+
+                await LoadOrganizationsAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                MessageBox.Show($"Error loading organization selection:\n\n{ex}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DialogResult = DialogResult.Cancel;
+                Close();
+            }
         }
 
         private async Task LoadOrganizationsAsync()
@@ -41,6 +67,14 @@ namespace Computer_Science_IA___Uniform_Manager
                 var response = await httpClient.GetAsync($"{API_BASE_URL}/GetOrganizations?userId={_currentUser.UserId}");
 
                 var jsonString = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(jsonString))
+                {
+                    listBoxOrganizations.Items.Clear();
+                    listBoxOrganizations.Items.Add("No organizations");
+                    buttonSelect.Enabled = false;
+                    return;
+                }
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -77,8 +111,9 @@ namespace Computer_Science_IA___Uniform_Manager
                     return;
                 }
 
-                // Check if organizations list is null or empty (new users, or no orgs)
-                if (result.Organizations == null || !result.Organizations.Any())
+                var safeOrganizations = result.Organizations?.Where(o => o != null).ToList() ?? new List<OrganizationDto>();
+
+                if (safeOrganizations.Count == 0)
                 {
                     _organizations = new List<OrganizationDto>();
                     listBoxOrganizations.Items.Add("No organizations");
@@ -88,16 +123,19 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
 
                 // Successfully loaded organizations
-                _organizations = result.Organizations;
+                _organizations = safeOrganizations;
 
                 foreach (var org in _organizations)
                 {
                     var roleText = GetRoleText(org.UserAccountLevel);
-                    listBoxOrganizations.Items.Add($"{org.OrganizationName} ({roleText})");
+                    var orgName = string.IsNullOrWhiteSpace(org.OrganizationName)
+                        ? "(Unnamed Organization)"
+                        : org.OrganizationName;
+                    listBoxOrganizations.Items.Add($"{orgName} ({roleText})");
                 }
 
                 labelSubtitle.Text = $"You have access to {_organizations.Count} organization(s)";
-                buttonSelect.Enabled = true;
+                buttonSelect.Enabled = _organizations.Count > 0;
             }
             catch (HttpRequestException httpEx)
             {
