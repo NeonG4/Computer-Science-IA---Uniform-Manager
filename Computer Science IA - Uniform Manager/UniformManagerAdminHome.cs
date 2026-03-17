@@ -452,10 +452,10 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 var selectedRow = dataGridViewUniforms.SelectedRows[0];
                 string? assignedStudent = selectedRow.Cells["AssignedStudentId"].Value?.ToString();
-                
+
                 // Enable Assign only if NOT assigned
                 buttonAssignUniform.Enabled = string.IsNullOrEmpty(assignedStudent);
-                
+
                 // Enable Unassign only if IS assigned
                 buttonUnassignUniform.Enabled = !string.IsNullOrEmpty(assignedStudent);
             }
@@ -694,7 +694,8 @@ namespace Computer_Science_IA___Uniform_Manager
             var txtUniformId = new TextBox { Location = new System.Drawing.Point(130, 18), Size = new System.Drawing.Size(240, 20), CharacterCasing = CharacterCasing.Upper };
 
             var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
-            var cmbType = new ComboBox {
+            var cmbType = new ComboBox
+            {
                 Location = new System.Drawing.Point(130, 58),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -801,7 +802,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 {
                     finalSize = cmbSize1.Text;
                 }
-                else 
+                else
                 {
                     if (string.IsNullOrWhiteSpace(txtSize1.Text))
                     {
@@ -809,7 +810,7 @@ namespace Computer_Science_IA___Uniform_Manager
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
-                    
+
                     string s1 = txtSize1.Text.Trim();
                     string s2 = txtSize2.Text.Trim();
 
@@ -921,7 +922,8 @@ namespace Computer_Science_IA___Uniform_Manager
             editForm.MinimizeBox = false;
 
             var lblUniformId = new Label { Text = "Uniform ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
-            var txtUniformId = new TextBox {
+            var txtUniformId = new TextBox
+            {
                 Location = new System.Drawing.Point(130, 18),
                 Size = new System.Drawing.Size(240, 20),
                 Text = uniformId,
@@ -930,7 +932,8 @@ namespace Computer_Science_IA___Uniform_Manager
             };
 
             var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
-            var cmbType = new ComboBox {
+            var cmbType = new ComboBox
+            {
                 Location = new System.Drawing.Point(130, 58),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -1013,7 +1016,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 var parts = size.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length > 0) txtSize1.Text = parts[0].Trim();
-                if (parts.Length > 1) 
+                if (parts.Length > 1)
                 {
                     string letter = parts[1].Trim().ToLower();
                     if (cmbSize2.Items.Contains(letter))
@@ -1066,7 +1069,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 {
                     finalSize = cmbSize1.Text;
                 }
-                else 
+                else
                 {
                     string s1 = txtSize1.Text.Trim();
                     string s2 = txtSize2.Text.Trim();
@@ -1279,8 +1282,14 @@ namespace Computer_Science_IA___Uniform_Manager
         }
 
 
-        private void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (_currentOrganization?.UserAccountLevel > 1)
+            {
+                MessageBox.Show("Only administrators and users can review missing assignments.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var selectTypeForm = new Form
             {
                 Text = "Check Missing Uniform Assignments",
@@ -1365,14 +1374,76 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else
                 {
-                    var missingListStr = string.Join("\n", missingStudents.Select(s => $"{s.StudentIdentifier} - {s.FullName}"));
-
-                    if (missingStudents.Count > 15)
+                    using var missingForm = new Form
                     {
-                        missingListStr = string.Join("\n", missingStudents.Take(15).Select(s => $"{s.StudentIdentifier} - {s.FullName}")) + $"\n... and {missingStudents.Count - 15} more.";
+                        Text = $"Missing '{typeName}' Assignments",
+                        Size = new Size(520, 420),
+                        StartPosition = FormStartPosition.CenterParent,
+                        FormBorderStyle = FormBorderStyle.FixedDialog,
+                        MaximizeBox = false,
+                        MinimizeBox = false
+                    };
+
+                    var lblMissing = new Label
+                    {
+                        Text = $"Select a student missing '{typeName}' to edit their attire:",
+                        Location = new Point(20, 20),
+                        Size = new Size(460, 25)
+                    };
+
+                    var listMissing = new ListBox
+                    {
+                        Location = new Point(20, 50),
+                        Size = new Size(460, 240),
+                        DisplayMember = "Display"
+                    };
+
+                    foreach (var student in missingStudents)
+                    {
+                        listMissing.Items.Add(new { Student = student, Display = $"{student.StudentIdentifier} - {student.FullName}" });
                     }
 
-                    MessageBox.Show($"The following {missingStudents.Count} student(s) are missing '{typeName}':\n\n{missingListStr}", "Missing Assignments", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    if (listMissing.Items.Count > 0)
+                    {
+                        listMissing.SelectedIndex = 0;
+                    }
+
+                    var btnEdit = new Button
+                    {
+                        Text = "Edit Student",
+                        DialogResult = DialogResult.OK,
+                        Location = new Point(310, 310),
+                        Size = new Size(170, 35)
+                    };
+
+                    var btnClose = new Button
+                    {
+                        Text = "Close",
+                        DialogResult = DialogResult.Cancel,
+                        Location = new Point(20, 310),
+                        Size = new Size(150, 35)
+                    };
+
+                    missingForm.Controls.AddRange(new Control[] { lblMissing, listMissing, btnEdit, btnClose });
+                    missingForm.AcceptButton = btnEdit;
+                    missingForm.CancelButton = btnClose;
+
+                    if (missingForm.ShowDialog() == DialogResult.OK && listMissing.SelectedItem != null)
+                    {
+                        dynamic selectedItem = listMissing.SelectedItem;
+                        StudentDto selectedStudent = selectedItem.Student;
+
+                        foreach (DataGridViewRow row in dataGridViewStudents.Rows)
+                        {
+                            if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(selectedStudent.StudentIdentifier, StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                dataGridViewStudents.ClearSelection();
+                                row.Selected = true;
+                                await EditSelectedStudent();
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1730,7 +1801,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 if (result?.Success == true)
                 {
-                    MessageBox.Show(result.Message, 
+                    MessageBox.Show(result.Message,
                         "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadUniformsAsync();
                 }
@@ -1802,11 +1873,11 @@ namespace Computer_Science_IA___Uniform_Manager
                 Size = new System.Drawing.Size(150, 35)
             };
 
-            conditionsForm.Controls.AddRange(new Control[] { 
+            conditionsForm.Controls.AddRange(new Control[] {
                 lblInfo,
-                chkStain, chkBrokenButton, chkBrokenZipper, 
+                chkStain, chkBrokenButton, chkBrokenZipper,
                 chkTorn, chkMissing, chkFaded,
-                btnSave, btnCancel 
+                btnSave, btnCancel
             });
             conditionsForm.AcceptButton = btnSave;
             conditionsForm.CancelButton = btnCancel;
@@ -1850,7 +1921,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 if (result?.Success == true)
                 {
-                    MessageBox.Show($"Conditions for uniform '{uniformId}' updated successfully!", 
+                    MessageBox.Show($"Conditions for uniform '{uniformId}' updated successfully!",
                         "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadUniformsAsync();
                 }
@@ -1931,8 +2002,8 @@ namespace Computer_Science_IA___Uniform_Manager
 
             if (addForm.ShowDialog() == DialogResult.OK)
             {
-                if (string.IsNullOrWhiteSpace(txtStudentId.Text) || 
-                    string.IsNullOrWhiteSpace(txtFirstName.Text) || 
+                if (string.IsNullOrWhiteSpace(txtStudentId.Text) ||
+                    string.IsNullOrWhiteSpace(txtFirstName.Text) ||
                     string.IsNullOrWhiteSpace(txtLastName.Text))
                 {
                     MessageBox.Show("Please fill in all fields.", "Validation Error",
@@ -1941,9 +2012,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
 
                 await CreateStudentAsync(
-                    txtStudentId.Text.Trim(), 
-                    txtFirstName.Text.Trim(), 
-                    txtLastName.Text.Trim(), 
+                    txtStudentId.Text.Trim(),
+                    txtFirstName.Text.Trim(),
+                    txtLastName.Text.Trim(),
                     (int)numGrade.Value);
             }
         }
@@ -2021,7 +2092,8 @@ namespace Computer_Science_IA___Uniform_Manager
             editForm.MinimizeBox = false;
 
             var lblStudentId = new Label { Text = "Student ID:", Location = new System.Drawing.Point(20, 20), Size = new System.Drawing.Size(100, 20) };
-            var txtStudentId = new TextBox {
+            var txtStudentId = new TextBox
+            {
                 Location = new System.Drawing.Point(130, 18),
                 Size = new System.Drawing.Size(240, 20),
                 Text = studentId,
@@ -2030,32 +2102,36 @@ namespace Computer_Science_IA___Uniform_Manager
             };
 
             var lblFirstName = new Label { Text = "First Name:", Location = new System.Drawing.Point(20, 60), Size = new System.Drawing.Size(100, 20) };
-            var txtFirstName = new TextBox { 
-                Location = new System.Drawing.Point(130, 58), 
+            var txtFirstName = new TextBox
+            {
+                Location = new System.Drawing.Point(130, 58),
                 Size = new System.Drawing.Size(240, 20),
                 Text = firstName
             };
 
             var lblLastName = new Label { Text = "Last Name:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
-            var txtLastName = new TextBox { 
-                Location = new System.Drawing.Point(130, 98), 
+            var txtLastName = new TextBox
+            {
+                Location = new System.Drawing.Point(130, 98),
                 Size = new System.Drawing.Size(240, 20),
                 Text = lastName
             };
 
             var lblGrade = new Label { Text = "Grade:", Location = new System.Drawing.Point(20, 140), Size = new System.Drawing.Size(100, 20) };
-            var numGrade = new NumericUpDown { 
-                Location = new System.Drawing.Point(130, 138), 
-                Size = new System.Drawing.Size(100, 20), 
-                Minimum = 1, 
-                Maximum = 12, 
-                Value = grade 
+            var numGrade = new NumericUpDown
+            {
+                Location = new System.Drawing.Point(130, 138),
+                Size = new System.Drawing.Size(100, 20),
+                Minimum = 1,
+                Maximum = 12,
+                Value = grade
             };
 
             var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 180), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
 
             var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 210), Size = new System.Drawing.Size(100, 20) };
-            var cmbType = new ComboBox {
+            var cmbType = new ComboBox
+            {
                 Location = new System.Drawing.Point(130, 208),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
@@ -2159,9 +2235,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
 
                 await UpdateStudentAsync(
-                    studentId, 
-                    txtFirstName.Text.Trim(), 
-                    txtLastName.Text.Trim(), 
+                    studentId,
+                    txtFirstName.Text.Trim(),
+                    txtLastName.Text.Trim(),
                     (int)numGrade.Value);
 
                 int type = cmbType.SelectedIndex - 1;
@@ -2172,7 +2248,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     {
                         sizeQuery = cmbSize1.Text;
                     }
-                    else 
+                    else
                     {
                         string s1 = txtSize1.Text.Trim();
                         string s2 = txtSize2.Text.Trim();
@@ -2271,7 +2347,8 @@ namespace Computer_Science_IA___Uniform_Manager
             }
             else
             {
-                string typeName = matchedType switch {
+                string typeName = matchedType switch
+                {
                     0 => "Concert Coat",
                     1 => "Drum Major Coat",
                     2 => "Hat",
@@ -2344,7 +2421,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             var selectedRow = dataGridViewStudents.SelectedRows[0];
             string studentId = selectedRow.Cells["StudentIdentifier"].Value.ToString()!;
-            string fullName = selectedRow.Cells["FullName"].Value?.ToString() ?? 
+            string fullName = selectedRow.Cells["FullName"].Value?.ToString() ??
                              $"{selectedRow.Cells["FirstName"].Value} {selectedRow.Cells["LastName"].Value}";
 
             var confirmResult = MessageBox.Show(
@@ -2897,8 +2974,8 @@ namespace Computer_Science_IA___Uniform_Manager
 
             // Show results
             var resultMessage = $"Import completed!\n\n" +
-                               $"✓ Successfully imported: {successCount}\n" +
-                               $"✗ Errors: {errorCount}";
+                               $"? Successfully imported: {successCount}\n" +
+                               $"? Errors: {errorCount}";
 
             if (errors.Any() && errors.Count <= 10)
             {
@@ -3142,8 +3219,8 @@ namespace Computer_Science_IA___Uniform_Manager
 
             // Show results
             var resultMessage = $"Import completed!\n\n" +
-                               $"✓ Successfully imported: {successCount}\n" +
-                               $"✗ Errors: {errorCount}";
+                               $"? Successfully imported: {successCount}\n" +
+                               $"? Errors: {errorCount}";
 
             if (errors.Any() && errors.Count <= 10)
             {
@@ -3247,7 +3324,7 @@ namespace Computer_Science_IA___Uniform_Manager
         private DataTable ReadSpreadsheetFile(string filePath)
         {
             var extension = Path.GetExtension(filePath).ToLower();
-            
+
             if (extension == ".csv")
             {
                 return ReadCsvFile(filePath);
@@ -3285,12 +3362,12 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 var values = ParseCsvLine(lines[i]);
                 var row = dataTable.NewRow();
-                
+
                 for (int j = 0; j < Math.Min(values.Length, dataTable.Columns.Count); j++)
                 {
                     row[j] = values[j];
                 }
-                
+
                 dataTable.Rows.Add(row);
             }
 
@@ -3328,13 +3405,12 @@ namespace Computer_Science_IA___Uniform_Manager
 
         private DataTable ReadExcelFile(string filePath)
         {
-            // For Excel files, we need a library like EPPlus or ClosedXML
-            // For simplicity, I'll provide a basic implementation that tells users to convert to CSV
+            // Excel files not supported yet
             throw new NotSupportedException(
                 "Excel file support requires additional libraries.\n\n" +
                 "Please save your Excel file as CSV format and try again:\n" +
                 "1. Open the file in Excel\n" +
-                "2. File → Save As\n" +
+                "2. File ? Save As\n" +
                 "3. Choose 'CSV (Comma delimited) (*.csv)'\n" +
                 "4. Import the CSV file");
         }
