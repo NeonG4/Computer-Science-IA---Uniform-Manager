@@ -29,6 +29,11 @@ namespace Computer_Science_IA___Uniform_Manager
                 return;
             }
 
+            // Save original text and set loading state
+            var originalButtonText = buttonLogin.Text;
+            buttonLogin.Enabled = false;
+            buttonLogin.Text = "Loading...";
+
             try
             {
                 var loginRequest = new
@@ -80,6 +85,11 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 MessageBox.Show($"Login error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                buttonLogin.Enabled = true;
+                buttonLogin.Text = originalButtonText;
+            }
         }
 
         private async void buttonCreate_Click(object sender, EventArgs e)
@@ -106,6 +116,11 @@ namespace Computer_Science_IA___Uniform_Manager
                 MessageBox.Show("Password must be at least 12 characters long.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+
+            // Save original text and set loading state
+            var originalButtonText = buttonCreate.Text;
+            buttonCreate.Enabled = false;
+            buttonCreate.Text = "Loading...";
 
             try
             {
@@ -161,6 +176,11 @@ namespace Computer_Science_IA___Uniform_Manager
             catch (Exception ex)
             {
                 MessageBox.Show($"Error creating account: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                buttonCreate.Enabled = true;
+                buttonCreate.Text = originalButtonText;
             }
         }
 
