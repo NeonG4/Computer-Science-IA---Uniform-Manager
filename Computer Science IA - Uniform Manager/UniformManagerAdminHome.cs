@@ -704,7 +704,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
-            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(100, 20) };
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(120, 20) };
             var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20) };
             var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
@@ -1114,6 +1114,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 var request = new UpdateUniformRequest
                 {
+                    OrganizationId = _currentOrganization!.OrganizationId,
                     UniformIdentifier = uniformId,
                     UniformType = uniformType,
                     Size = size,
@@ -1126,10 +1127,23 @@ namespace Computer_Science_IA___Uniform_Manager
                 var response = await httpClient.PutAsync($"{API_BASE_URL}/UpdateUniform", content);
                 var jsonString = await response.Content.ReadAsStringAsync();
 
-                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                UniformResponse? result = null;
+                try
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                catch
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        MessageBox.Show($"Server returned error code {response.StatusCode}.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    throw; // Re-throw if it was a success but invalid json
+                }
 
                 if (result?.Success == true)
                 {
@@ -1208,6 +1222,58 @@ namespace Computer_Science_IA___Uniform_Manager
             catch (Exception ex)
             {
                 MessageBox.Show($"Error deleting uniform:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void UnassignAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can unassign all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to unassign ALL uniforms in {_currentOrganization.OrganizationName} from their students?\n\n" +
+                $"This will also check in all currently checked out uniforms.",
+                "Confirm Unassign All",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            // Second confirmation
+            if (!ConfirmActionWithOrganizationName("unassign all uniforms")) return;
+
+            try
+            {
+                var response = await httpClient.PostAsync(
+                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms/unassignall?userId={_currentUser!.UserId}",
+                    new StringContent("", Encoding.UTF8, "application/json")); // empty body
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "All uniforms unassigned successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUniformsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error unassigning all uniforms:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error unassigning all uniforms:\n\n{ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -2691,6 +2757,16 @@ namespace Computer_Science_IA___Uniform_Manager
                             errors.Add($"Row {i + 1} ({uniformId}): Missing size");
                             errorCount++;
                             continue;
+                        }
+
+                        // Format Concert Coat sizes (e.g., 38L, 38-l, 38 L -> 38 l)
+                        if (uniformType == 0) // Concert Coat
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(sizeStr.Trim(), @"^(\d+)(?:\s*|-)*([A-Za-z]+)$");
+                            if (match.Success)
+                            {
+                                sizeStr = $"{match.Groups[1].Value} {match.Groups[2].Value.ToLower()}";
+                            }
                         }
 
                         // Create uniform via API

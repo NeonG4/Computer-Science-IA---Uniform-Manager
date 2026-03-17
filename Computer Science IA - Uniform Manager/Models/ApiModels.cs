@@ -57,6 +57,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
 
     public class UpdateUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int? UniformType { get; set; }
         public string? Size { get; set; }
@@ -65,6 +66,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
 
     public class CheckOutUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public string? StudentId { get; set; }
         public bool CheckOut { get; set; }
@@ -73,6 +75,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
 
     public class AssignUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public string StudentId { get; set; } = string.Empty;
         public int RequestingUserId { get; set; }
@@ -80,12 +83,14 @@ namespace Computer_Science_IA___Uniform_Manager.Models
 
     public class UnassignUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int RequestingUserId { get; set; }
     }
 
     public class UpdateConditionsRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int[] Conditions { get; set; } = Array.Empty<int>();
         public int RequestingUserId { get; set; }
@@ -109,6 +114,7 @@ namespace Computer_Science_IA___Uniform_Manager.Models
     public class UniformDto
     {
         public int UniformId { get; set; }
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int UniformType { get; set; }
         public string UniformTypeName { get; set; } = string.Empty;

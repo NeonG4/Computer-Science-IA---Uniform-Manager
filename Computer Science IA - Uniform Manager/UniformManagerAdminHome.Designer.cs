@@ -37,6 +37,7 @@
             editToolStripMenuItem = new ToolStripMenuItem();
             searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
             promoteStudentsToolStripMenuItem = new ToolStripMenuItem();
+            unassignAllUniformsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllUniformsToolStripMenuItem = new ToolStripMenuItem();
             deleteAllStudentsToolStripMenuItem = new ToolStripMenuItem();
             orgToolStripMenuItem = new ToolStripMenuItem();
@@ -148,7 +149,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, promoteStudentsToolStripMenuItem, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, promoteStudentsToolStripMenuItem, unassignAllUniformsToolStripMenuItem, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(39, 22);
             editToolStripMenuItem.Text = "Edit";
@@ -166,6 +167,13 @@
             promoteStudentsToolStripMenuItem.Size = new Size(200, 22);
             promoteStudentsToolStripMenuItem.Text = "Age Students by a Grade...";
             promoteStudentsToolStripMenuItem.Click += PromoteStudentsToolStripMenuItem_Click;
+            // 
+            // unassignAllUniformsToolStripMenuItem
+            // 
+            unassignAllUniformsToolStripMenuItem.Name = "unassignAllUniformsToolStripMenuItem";
+            unassignAllUniformsToolStripMenuItem.Size = new Size(180, 22);
+            unassignAllUniformsToolStripMenuItem.Text = "Unassign All Uniforms...";
+            unassignAllUniformsToolStripMenuItem.Click += UnassignAllUniformsToolStripMenuItem_Click;
             // 
             // deleteAllUniformsToolStripMenuItem
             // 
@@ -709,6 +717,7 @@
         private ToolStripMenuItem organizationInfoToolStripMenuItem;
         private ToolStripMenuItem searchAndEditStudentToolStripMenuItem;
         private ToolStripMenuItem promoteStudentsToolStripMenuItem;
+        private ToolStripMenuItem unassignAllUniformsToolStripMenuItem;
         private ToolStripMenuItem deleteAllUniformsToolStripMenuItem;
         private ToolStripMenuItem deleteAllStudentsToolStripMenuItem;
         private TableLayoutPanel tableLayoutPanel1;

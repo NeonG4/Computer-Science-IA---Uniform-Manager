@@ -20,6 +20,7 @@ namespace CompsciAzureFunctionAPI2026.Models
     /// </summary>
     public class UpdateUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int? UniformType { get; set; }
         public string? Size { get; set; }

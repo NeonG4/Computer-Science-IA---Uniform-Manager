@@ -375,23 +375,7 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Get the uniform's organization ID first
-                await using var getOrgCmd = new SqlCommand(
-                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
-                    connection);
-                getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
-
-                var orgResult = await getOrgCmd.ExecuteScalarAsync();
-                if (orgResult == null)
-                {
-                    return new NotFoundObjectResult(new UniformResponse
-                    {
-                        Success = false,
-                        Message = "Uniform not found."
-                    });
-                }
-
-                int organizationId = (int)orgResult;
+                int organizationId = request.OrganizationId;
 
                 // Check Admin permission in this organization
                 await using var permCmd = new SqlCommand(@"
@@ -455,9 +439,10 @@ namespace CompsciAzureFunctionAPI2026
                 cmd.CommandText = $@"
                     UPDATE [dbo].[Uniforms]
                     SET {string.Join(", ", updates)}
-                    WHERE UniformIdentifier = @Id";
+                    WHERE UniformIdentifier = @Id AND OrganizationId = @OrgId";
 
                 cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                cmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
                 cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
 
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -480,7 +465,14 @@ namespace CompsciAzureFunctionAPI2026
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating uniform.");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+                return new ObjectResult(new UniformResponse 
+                { 
+                    Success = false, 
+                    Message = $"An error occurred: {ex.Message}" 
+                }) 
+                { 
+                    StatusCode = StatusCodes.Status500InternalServerError 
+                };
             }
         }
 
@@ -922,6 +914,89 @@ namespace CompsciAzureFunctionAPI2026
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error unassigning uniform.");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        /// <summary>
+        /// POST unassign all uniforms for an organization - Admin only
+        /// </summary>
+        [Function("UnassignAllUniforms")]
+        public async Task<IActionResult> UnassignAllUniforms(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "organizations/{orgId}/uniforms/unassignall")] HttpRequest req,
+            int orgId)
+        {
+            _logger.LogInformation("UnassignAllUniforms function triggered for organization: {OrgId}", orgId);
+
+            try
+            {
+                if (!int.TryParse(req.Query["userId"], out int userId))
+                {
+                    return new BadRequestObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "User ID is required."
+                    });
+                }
+
+                string? connectionString = _configuration.GetConnectionString("SqlConnection");
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                // Check Admin permission in this organization
+                await using var permCmd = new SqlCommand(@"
+                    SELECT AccountLevel FROM [dbo].[UserOrganizations]
+                    WHERE UserId = @UserId AND OrganizationId = @OrgId AND IsActive = 1",
+                    connection);
+                permCmd.Parameters.AddWithValue("@UserId", userId);
+                permCmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                var permResult = await permCmd.ExecuteScalarAsync();
+                if (permResult == null)
+                {
+                    return new UnauthorizedObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "You do not have access to this organization."
+                    });
+                }
+
+                int accountLevel = (int)permResult;
+                if (accountLevel != 0) // 0 = Administrator
+                {
+                    return new ObjectResult(new UniformResponse
+                    {
+                        Success = false,
+                        Message = "Only administrators can unassign all uniforms."
+                    })
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    };
+                }
+
+                // Unassign all uniforms (also check in if checked out)
+                await using var cmd = new SqlCommand(@"
+                    UPDATE [dbo].[Uniforms]
+                    SET AssignedStudentId = NULL,
+                        IsCheckedOut = 0,
+                        LastModified = GETDATE(),
+                        ModifiedBy = @UserId
+                    WHERE OrganizationId = @OrgId AND AssignedStudentId IS NOT NULL", connection);
+
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@OrgId", orgId);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                return new OkObjectResult(new UniformResponse
+                {
+                    Success = true,
+                    Message = $"Successfully unassigned {rowsAffected} uniforms."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unassigning all uniforms.");
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
             }
         }
