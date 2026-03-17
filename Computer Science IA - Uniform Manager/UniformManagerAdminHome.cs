@@ -1278,6 +1278,105 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+
+        private void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var selectTypeForm = new Form
+            {
+                Text = "Check Missing Uniform Assignments",
+                Size = new Size(400, 200),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var lblPrompt = new Label
+            {
+                Text = "Select uniform type to check:",
+                Location = new Point(20, 20),
+                Size = new Size(350, 20)
+            };
+
+            var cmbType = new ComboBox
+            {
+                Location = new Point(20, 50),
+                Size = new Size(340, 20),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbType.Items.AddRange(new object[] {
+                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "Marching Shorts", "Marching Socks", "Pants"
+            });
+            cmbType.SelectedIndex = 0;
+
+            var btnCheck = new Button
+            {
+                Text = "Check Assigned",
+                DialogResult = DialogResult.OK,
+                Location = new Point(190, 100),
+                Size = new Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(20, 100),
+                Size = new Size(150, 35)
+            };
+
+            selectTypeForm.Controls.AddRange(new Control[] { lblPrompt, cmbType, btnCheck, btnCancel });
+            selectTypeForm.AcceptButton = btnCheck;
+            selectTypeForm.CancelButton = btnCancel;
+
+            if (selectTypeForm.ShowDialog() == DialogResult.OK)
+            {
+                int selectedType = cmbType.SelectedIndex;
+                string typeName = cmbType.Text;
+
+                var studentsSource = (List<StudentDto>?)dataGridViewStudents.DataSource;
+                var uniformsSource = (List<UniformDto>?)dataGridViewUniforms.DataSource;
+
+                if (studentsSource == null || studentsSource.Count == 0)
+                {
+                    MessageBox.Show("No students available. Please load students first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (uniformsSource == null)
+                {
+                    uniformsSource = new List<UniformDto>();
+                }
+
+                // Find students who don't have ANY assigned uniform of the selected type
+                var assignedStudentIds = uniformsSource
+                    .Where(u => u.UniformType == selectedType && !string.IsNullOrEmpty(u.AssignedStudentId))
+                    .Select(u => u.AssignedStudentId!)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var missingStudents = studentsSource
+                    .Where(s => !assignedStudentIds.Contains(s.StudentIdentifier))
+                    .ToList();
+
+                if (missingStudents.Count == 0)
+                {
+                    MessageBox.Show($"All students have a '{typeName}' assigned to them!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    var missingListStr = string.Join("\n", missingStudents.Select(s => $"{s.StudentIdentifier} - {s.FullName}"));
+
+                    if (missingStudents.Count > 15)
+                    {
+                        missingListStr = string.Join("\n", missingStudents.Take(15).Select(s => $"{s.StudentIdentifier} - {s.FullName}")) + $"\n... and {missingStudents.Count - 15} more.";
+                    }
+
+                    MessageBox.Show($"The following {missingStudents.Count} student(s) are missing '{typeName}':\n\n{missingListStr}", "Missing Assignments", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
         private async void DeleteAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_currentOrganization?.UserAccountLevel != 0)
