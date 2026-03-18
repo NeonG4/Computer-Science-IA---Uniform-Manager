@@ -686,15 +686,24 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
+                request.UniformIdentifier = request.UniformIdentifier.Trim().ToUpperInvariant();
+                request.StudentId = request.StudentId.Trim().ToUpperInvariant();
+
                 string? connectionString = _configuration.GetConnectionString("SqlConnection");
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Get the uniform's organization ID first
-                await using var getOrgCmd = new SqlCommand(
-                    "SELECT OrganizationId, AssignedStudentId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
-                    connection);
+                // Get the uniform's organization ID first (scoped to request org when provided)
+                var getOrgSql = request.OrganizationId > 0
+                    ? "SELECT OrganizationId, AssignedStudentId FROM [dbo].[Uniforms] WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id AND OrganizationId = @OrgId"
+                    : "SELECT OrganizationId, AssignedStudentId FROM [dbo].[Uniforms] WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id";
+
+                await using var getOrgCmd = new SqlCommand(getOrgSql, connection);
                 getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                if (request.OrganizationId > 0)
+                {
+                    getOrgCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+                }
 
                 await using var orgReader = await getOrgCmd.ExecuteReaderAsync();
                 if (!await orgReader.ReadAsync())
@@ -753,7 +762,7 @@ namespace CompsciAzureFunctionAPI2026
 
                 // Verify student exists in same organization
                 await using var checkStudentCmd = new SqlCommand(
-                    "SELECT COUNT(*) FROM [dbo].[Students] WHERE StudentIdentifier = @StudentId AND OrganizationId = @OrgId",
+                    "SELECT COUNT(*) FROM [dbo].[Students] WHERE UPPER(LTRIM(RTRIM(StudentIdentifier))) = UPPER(LTRIM(RTRIM(@StudentId))) AND OrganizationId = @OrgId",
                     connection);
                 checkStudentCmd.Parameters.AddWithValue("@StudentId", request.StudentId);
                 checkStudentCmd.Parameters.AddWithValue("@OrgId", organizationId);
@@ -773,11 +782,13 @@ namespace CompsciAzureFunctionAPI2026
                     SET AssignedStudentId = @StudentId,
                         LastModified = GETDATE(),
                         ModifiedBy = @UserId
-                    WHERE UniformIdentifier = @Id", connection);
+                    WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id
+                      AND OrganizationId = @OrgId", connection);
 
                 cmd.Parameters.AddWithValue("@StudentId", request.StudentId);
                 cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
                 cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                cmd.Parameters.AddWithValue("@OrgId", organizationId);
 
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
 

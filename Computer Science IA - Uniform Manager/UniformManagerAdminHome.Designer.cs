@@ -37,6 +37,8 @@
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
+            searchUniformsToolStripMenuItem = new ToolStripMenuItem();
+            clearUniformSearchToolStripMenuItem = new ToolStripMenuItem();
             checkMissingAssignmentsToolStripMenuItem = new ToolStripMenuItem();
             promoteStudentsToolStripMenuItem = new ToolStripMenuItem();
             unassignAllUniformsToolStripMenuItem = new ToolStripMenuItem();
@@ -92,7 +94,6 @@
             buttonChangeUserRole = new Button();
             buttonRemoveUserFromOrg = new Button();
             labelUsers = new Label();
-            toolStripMenuItem1 = new ToolStripSeparator();
             toolStripMenuItem2 = new ToolStripSeparator();
             menuStrip1.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -126,9 +127,11 @@
             homeToolStripMenuItem.Name = "homeToolStripMenuItem";
             homeToolStripMenuItem.Size = new Size(64, 24);
             homeToolStripMenuItem.Text = "Home";
+            homeToolStripMenuItem.Click += HomeToolStripMenuItem_Click;
             // 
             // navigateToolStripMenuItem
             // 
+            navigateToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, searchUniformsToolStripMenuItem, clearUniformSearchToolStripMenuItem });
             navigateToolStripMenuItem.Name = "navigateToolStripMenuItem";
             navigateToolStripMenuItem.Size = new Size(83, 24);
             navigateToolStripMenuItem.Text = "Navigate";
@@ -156,7 +159,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { searchAndEditStudentToolStripMenuItem, toolStripMenuItem1, checkMissingAssignmentsToolStripMenuItem, promoteStudentsToolStripMenuItem, unassignAllUniformsToolStripMenuItem, toolStripMenuItem2, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { checkMissingAssignmentsToolStripMenuItem, promoteStudentsToolStripMenuItem, unassignAllUniformsToolStripMenuItem, toolStripMenuItem2, deleteAllUniformsToolStripMenuItem, deleteAllStudentsToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(49, 24);
             editToolStripMenuItem.Text = "Edit";
@@ -167,6 +170,21 @@
             searchAndEditStudentToolStripMenuItem.Size = new Size(265, 26);
             searchAndEditStudentToolStripMenuItem.Text = "Search and Edit Student...";
             searchAndEditStudentToolStripMenuItem.Click += SearchAndEditStudentToolStripMenuItem_Click;
+            // 
+            // searchUniformsToolStripMenuItem
+            // 
+            searchUniformsToolStripMenuItem.Name = "searchUniformsToolStripMenuItem";
+            searchUniformsToolStripMenuItem.Size = new Size(265, 26);
+            searchUniformsToolStripMenuItem.Text = "Search Uniforms...";
+            searchUniformsToolStripMenuItem.Click += SearchUniformsToolStripMenuItem_Click;
+            // 
+            // clearUniformSearchToolStripMenuItem
+            // 
+            clearUniformSearchToolStripMenuItem.Enabled = false;
+            clearUniformSearchToolStripMenuItem.Name = "clearUniformSearchToolStripMenuItem";
+            clearUniformSearchToolStripMenuItem.Size = new Size(265, 26);
+            clearUniformSearchToolStripMenuItem.Text = "Clear Uniform Search";
+            clearUniformSearchToolStripMenuItem.Click += ClearUniformSearchToolStripMenuItem_Click;
             // 
             // promoteStudentsToolStripMenuItem
             // 
@@ -714,11 +732,6 @@
             labelUsers.Text = "Users";
             labelUsers.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // toolStripMenuItem1
-            // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(262, 6);
-            // 
             // toolStripMenuItem2
             // 
             toolStripMenuItem2.Name = "toolStripMenuItem2";
@@ -769,6 +782,8 @@
         private ToolStripMenuItem organizationInfoToolStripMenuItem;
         private ToolStripMenuItem checkMissingAssignmentsToolStripMenuItem;
         private ToolStripMenuItem searchAndEditStudentToolStripMenuItem;
+        private ToolStripMenuItem searchUniformsToolStripMenuItem;
+        private ToolStripMenuItem clearUniformSearchToolStripMenuItem;
         private ToolStripMenuItem promoteStudentsToolStripMenuItem;
         private ToolStripMenuItem unassignAllUniformsToolStripMenuItem;
         private ToolStripMenuItem deleteAllUniformsToolStripMenuItem;
@@ -820,7 +835,6 @@
         private ToolStripMenuItem manageUsersToolStripMenuItem;
         private ToolStripMenuItem importUniformsToolStripMenuItem;
         private ToolStripMenuItem importStudentsToolStripMenuItem;
-        private ToolStripSeparator toolStripMenuItem1;
         private ToolStripSeparator toolStripMenuItem2;
     }
 }
