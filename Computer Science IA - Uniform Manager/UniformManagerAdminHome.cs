@@ -2505,7 +2505,7 @@ namespace Computer_Science_IA___Uniform_Manager
             cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
             cmbType.SelectedIndexChanged += (s, ev) => {
-                int type = cmbType.SelectedIndex - 1;
+                int type = cmbType.SelectedIndex;
 
                 if (type < 0)
                 {
@@ -3247,636 +3247,188 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
-        private void ImportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (_currentOrganization?.UserAccountLevel != 0)
+            var uniforms = _uniformsCache ?? (List<UniformDto>?)dataGridViewUniforms.DataSource;
+            if (uniforms == null || uniforms.Count == 0)
             {
-                MessageBox.Show(
-                    "Only administrators can import uniforms.",
-                    "Insufficient Permissions",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MessageBox.Show("No uniforms available to export.", "Export Uniforms", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            ImportUniforms();
-        }
+            using var saveDialog = new SaveFileDialog
+            {
+                Title = "Export Uniforms to CSV",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                FileName = $"uniforms_{_currentOrganization?.OrganizationName?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv"
+            };
 
-        private async void ImportUniforms()
-        {
+            if (saveDialog.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
             try
             {
-                // Open file dialog
-                using var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select Uniforms File to Import",
-                    Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
-                    FilterIndex = 1
-                };
+                var sb = new StringBuilder();
+                sb.AppendLine("UniformIdentifier,UniformType,Size,IsCheckedOut,AssignedStudentId,Conditions,GoodCondition");
 
-                if (openFileDialog.ShowDialog() != DialogResult.OK)
-                    return;
+                foreach (var uniform in uniforms)
+                {
+                    var typeText = string.IsNullOrWhiteSpace(uniform.UniformTypeName)
+                        ? uniform.UniformType.ToString()
+                        : uniform.UniformTypeName;
 
-                // Read the file
-                DataTable importData;
-                try
-                {
-                    importData = ReadSpreadsheetFile(openFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error reading file:\n\n{ex.Message}",
-                        "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                    var conditionsText = uniform.ConditionNames != null && uniform.ConditionNames.Length > 0
+                        ? string.Join("|", uniform.ConditionNames)
+                        : string.Empty;
 
-                if (importData.Rows.Count == 0)
-                {
-                    MessageBox.Show("The file contains no data to import.",
-                        "Empty File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    sb.AppendLine(string.Join(",",
+                        EscapeCsvValue(uniform.UniformIdentifier),
+                        EscapeCsvValue(typeText),
+                        EscapeCsvValue(uniform.Size),
+                        uniform.IsCheckedOut ? "true" : "false",
+                        EscapeCsvValue(uniform.AssignedStudentId),
+                        EscapeCsvValue(conditionsText),
+                        uniform.IsInGoodCondition ? "true" : "false"));
                 }
 
-                // Show column mapping form
-                using var mappingForm = new ImportColumnMappingForm(importData, ImportColumnMappingForm.ImportType.Uniforms);
-                if (mappingForm.ShowDialog() != DialogResult.OK)
-                    return;
-
-                // Process import
-                await ProcessUniformImport(importData, mappingForm.ColumnMapping);
+                File.WriteAllText(saveDialog.FileName, sb.ToString(), Encoding.UTF8);
+                MessageBox.Show($"Exported {uniforms.Count} uniforms successfully.", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error during import:\n\n{ex.Message}",
-                    "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Failed to export uniforms:\n\n{ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private async Task ProcessUniformImport(DataTable data, Dictionary<string, string> columnMapping)
+        private void ExportStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int successCount = 0;
-            int errorCount = 0;
-            var errors = new List<string>();
-
-            // Create progress form
-            using var progressForm = new Form
+            var students = (List<StudentDto>?)dataGridViewStudents.DataSource;
+            if (students == null || students.Count == 0)
             {
-                Text = "Importing Uniforms",
-                Size = new Size(400, 150),
-                StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false,
-                ControlBox = false
+                MessageBox.Show("No students available to export.", "Export Students", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var saveDialog = new SaveFileDialog
+            {
+                Title = "Export Students to CSV",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                FileName = $"students_{_currentOrganization?.OrganizationName?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv"
             };
 
-            var progressBar = new ProgressBar
+            if (saveDialog.ShowDialog() != DialogResult.OK)
             {
-                Location = new Point(20, 20),
-                Size = new Size(350, 30),
-                Maximum = data.Rows.Count
-            };
-
-            var lblStatus = new Label
-            {
-                Location = new Point(20, 60),
-                Size = new Size(350, 40),
-                Text = "Starting import..."
-            };
-
-            progressForm.Controls.AddRange(new Control[] { progressBar, lblStatus });
-            progressForm.Show();
+                return;
+            }
 
             try
             {
-                for (int i = 0; i < data.Rows.Count; i++)
+                var sb = new StringBuilder();
+                sb.AppendLine("StudentIdentifier,FirstName,LastName,FullName,Grade");
+
+                foreach (var student in students)
                 {
-                    var row = data.Rows[i];
-                    progressBar.Value = i + 1;
-                    lblStatus.Text = $"Processing record {i + 1} of {data.Rows.Count}...";
-                    Application.DoEvents();
-
-                    try
-                    {
-                        // Extract data from row
-                        string uniformId = GetRowValue(row, columnMapping, "UniformIdentifier")?.Trim() ?? "";
-                        string typeStr = GetRowValue(row, columnMapping, "UniformType")?.Trim() ?? "";
-                        string sizeStr = GetRowValue(row, columnMapping, "Size")?.Trim() ?? "";
-
-                        if (string.IsNullOrWhiteSpace(uniformId))
-                        {
-                            errors.Add($"Row {i + 1}: Missing Uniform ID");
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Parse uniform type
-                        int uniformType = ParseUniformType(typeStr);
-                        if (uniformType == -1)
-                        {
-                            errors.Add($"Row {i + 1} ({uniformId}): Invalid uniform type '{typeStr}'");
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Validate size
-                        if (string.IsNullOrWhiteSpace(sizeStr))
-                        {
-                            errors.Add($"Row {i + 1} ({uniformId}): Missing size");
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Format Concert Coat sizes (e.g., 38L, 38-l, 38 L -> 38 l)
-                        if (uniformType == 0) // Concert Coat
-                        {
-                            var match = System.Text.RegularExpressions.Regex.Match(sizeStr.Trim(), @"^(\d+)(?:\s*|-)*([A-Za-z]+)$");
-                            if (match.Success)
-                            {
-                                sizeStr = $"{match.Groups[1].Value} {match.Groups[2].Value.ToLower()}";
-                            }
-                        }
-
-                        // Create uniform via API
-                        var result = await CreateUniformViaImport(uniformId, uniformType, sizeStr);
-                        if (result)
-                        {
-                            successCount++;
-                        }
-                        else
-                        {
-                            errors.Add($"Row {i + 1} ({uniformId}): Failed to create (may already exist)");
-                            errorCount++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"Row {i + 1}: {ex.Message}");
-                        errorCount++;
-                    }
+                    sb.AppendLine(string.Join(",",
+                        EscapeCsvValue(student.StudentIdentifier),
+                        EscapeCsvValue(student.FirstName),
+                        EscapeCsvValue(student.LastName),
+                        EscapeCsvValue(student.FullName),
+                        student.Grade.ToString()));
                 }
+
+                File.WriteAllText(saveDialog.FileName, sb.ToString(), Encoding.UTF8);
+                MessageBox.Show($"Exported {students.Count} students successfully.", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            finally
+            catch (Exception ex)
             {
-                progressForm.Close();
+                MessageBox.Show($"Failed to export students:\n\n{ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            // Refresh the uniforms list
-            await LoadUniformsAsync();
-
-            // Show results
-            var resultMessage = $"Import completed!\n\n" +
-                               $"? Successfully imported: {successCount}\n" +
-                               $"? Errors: {errorCount}";
-
-            if (errors.Any() && errors.Count <= 10)
-            {
-                resultMessage += $"\n\nErrors:\n{string.Join("\n", errors)}";
-            }
-            else if (errors.Count > 10)
-            {
-                resultMessage += $"\n\nShowing first 10 errors:\n{string.Join("\n", errors.Take(10))}\n... and {errors.Count - 10} more";
-            }
-
-            MessageBox.Show(resultMessage, "Import Results",
-                MessageBoxButtons.OK,
-                errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 
-        private async Task<bool> CreateUniformViaImport(string uniformId, int uniformType, string size)
+        private void ExportUsersToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can export users.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var users = _organizationUsers?.Where(u => u.IsActive).ToList();
+            if (users == null || users.Count == 0)
+            {
+                MessageBox.Show("No users available to export.", "Export Users", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using var saveDialog = new SaveFileDialog
+            {
+                Title = "Export Users to CSV",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                FileName = $"users_{_currentOrganization?.OrganizationName?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv"
+            };
+
+            if (saveDialog.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
             try
             {
-                var request = new CreateUniformRequest
+                var sb = new StringBuilder();
+                sb.AppendLine("UserId,FirstName,LastName,Email,Role");
+
+                foreach (var user in users)
                 {
-                    OrganizationId = _currentOrganization!.OrganizationId,
-                    UniformIdentifier = uniformId,
-                    UniformType = uniformType,
-                    Size = size,
-                    RequestingUserId = _currentUser!.UserId
-                };
+                    sb.AppendLine(string.Join(",",
+                        user.UserId,
+                        EscapeCsvValue(user.FirstName),
+                        EscapeCsvValue(user.LastName),
+                        EscapeCsvValue(user.Email),
+                        EscapeCsvValue(GetRoleText(user.AccountLevel))));
+                }
 
-                var json = JsonSerializer.Serialize(request);
-                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
-
-                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateUniform", content);
-                var jsonString = await response.Content.ReadAsStringAsync();
-
-                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return result?.Success == true;
+                File.WriteAllText(saveDialog.FileName, sb.ToString(), Encoding.UTF8);
+                MessageBox.Show($"Exported {users.Count} users successfully.", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                MessageBox.Show($"Failed to export users:\n\n{ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private int ParseUniformType(string typeStr)
+        private void ImportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(typeStr))
-                return -1;
-
-            typeStr = typeStr.Trim().ToLower().Replace(" ", "").Replace("-", "");
-
-            return typeStr switch
-            {
-                "concertcoat" or "concert" or "0" => 0,
-                "drummajorcoat" or "drummajor" or "dm" or "1" => 1,
-                "hat" or "2" => 2,
-                "marchingcoat" or "marching" or "coat" or "3" => 3,
-                "marchingshorts" or "shorts" or "4" => 4,
-                "marchingsocks" or "socks" or "5" => 5,
-                "pants" or "6" => 6,
-                _ => -1
-            };
+            MessageBox.Show("Import Uniforms is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void ImportStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (_currentOrganization?.UserAccountLevel != 0)
-            {
-                MessageBox.Show(
-                    "Only administrators can import students.",
-                    "Insufficient Permissions",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-
-            ImportStudents();
+            MessageBox.Show("Import Students is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private async void ImportStudents()
+        private static string EscapeCsvValue(string? value)
         {
-            try
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            value = value.Replace("\"", "\"\"");
+
+            if (value.Contains(',') || value.Contains('"') || value.Contains("\n") || value.Contains("\r"))
             {
-                // Open file dialog
-                using var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select Students File to Import",
-                    Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
-                    FilterIndex = 1
-                };
-
-                if (openFileDialog.ShowDialog() != DialogResult.OK)
-                    return;
-
-                // Read the file
-                DataTable importData;
-                try
-                {
-                    importData = ReadSpreadsheetFile(openFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error reading file:\n\n{ex.Message}",
-                        "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (importData.Rows.Count == 0)
-                {
-                    MessageBox.Show("The file contains no data to import.",
-                        "Empty File", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Show column mapping form
-                using var mappingForm = new ImportColumnMappingForm(importData, ImportColumnMappingForm.ImportType.Students);
-                if (mappingForm.ShowDialog() != DialogResult.OK)
-                    return;
-
-                // Process import
-                await ProcessStudentImport(importData, mappingForm.ColumnMapping);
+                value = $"\"{value}\"";
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error during import:\n\n{ex.Message}",
-                    "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+
+            return value;
         }
 
-        private async Task ProcessStudentImport(DataTable data, Dictionary<string, string> columnMapping)
+        private void ImportUsersToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int successCount = 0;
-            int errorCount = 0;
-            var errors = new List<string>();
-
-            // Create progress form
-            using var progressForm = new Form
-            {
-                Text = "Importing Students",
-                Size = new Size(400, 150),
-                StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false,
-                ControlBox = false
-            };
-
-            var progressBar = new ProgressBar
-            {
-                Location = new Point(20, 20),
-                Size = new Size(350, 30),
-                Maximum = data.Rows.Count
-            };
-
-            var lblStatus = new Label
-            {
-                Location = new Point(20, 60),
-                Size = new Size(350, 40),
-                Text = "Starting import..."
-            };
-
-            progressForm.Controls.AddRange(new Control[] { progressBar, lblStatus });
-            progressForm.Show();
-
-            try
-            {
-                for (int i = 0; i < data.Rows.Count; i++)
-                {
-                    var row = data.Rows[i];
-                    progressBar.Value = i + 1;
-                    lblStatus.Text = $"Processing record {i + 1} of {data.Rows.Count}...";
-                    Application.DoEvents();
-
-                    try
-                    {
-                        // Extract data from row
-                        string studentId = GetRowValue(row, columnMapping, "StudentIdentifier")?.Trim() ?? "";
-                        string firstName = GetRowValue(row, columnMapping, "FirstName")?.Trim() ?? "";
-                        string lastName = GetRowValue(row, columnMapping, "LastName")?.Trim() ?? "";
-                        string gradeStr = GetRowValue(row, columnMapping, "Grade")?.Trim() ?? "";
-
-                        if (string.IsNullOrWhiteSpace(studentId))
-                        {
-                            errors.Add($"Row {i + 1}: Missing Student ID");
-                            errorCount++;
-                            continue;
-                        }
-
-                        if (string.IsNullOrWhiteSpace(firstName))
-                        {
-                            errors.Add($"Row {i + 1} ({studentId}): Missing First Name");
-                            errorCount++;
-                            continue;
-                        }
-
-                        if (string.IsNullOrWhiteSpace(lastName))
-                        {
-                            errors.Add($"Row {i + 1} ({studentId}): Missing Last Name");
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Parse grade with flexible formatting
-                        int grade = ParseGrade(gradeStr);
-                        if (grade == -1)
-                        {
-                            errors.Add($"Row {i + 1} ({studentId}): Invalid grade '{gradeStr}'");
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Create student via API
-                        var result = await CreateStudentViaImport(studentId, firstName, lastName, grade);
-                        if (result)
-                        {
-                            successCount++;
-                        }
-                        else
-                        {
-                            errors.Add($"Row {i + 1} ({studentId}): Failed to create (may already exist)");
-                            errorCount++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"Row {i + 1}: {ex.Message}");
-                        errorCount++;
-                    }
-                }
-            }
-            finally
-            {
-                progressForm.Close();
-            }
-
-            // Refresh the students list
-            await LoadStudentsAsync();
-
-            // Show results
-            var resultMessage = $"Import completed!\n\n" +
-                               $"? Successfully imported: {successCount}\n" +
-                               $"? Errors: {errorCount}";
-
-            if (errors.Any() && errors.Count <= 10)
-            {
-                resultMessage += $"\n\nErrors:\n{string.Join("\n", errors)}";
-            }
-            else if (errors.Count > 10)
-            {
-                resultMessage += $"\n\nShowing first 10 errors:\n{string.Join("\n", errors.Take(10))}\n... and {errors.Count - 10} more";
-            }
-
-            MessageBox.Show(resultMessage, "Import Results",
-                MessageBoxButtons.OK,
-                errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
-        }
-
-        private int ParseGrade(string gradeStr)
-        {
-            if (string.IsNullOrWhiteSpace(gradeStr))
-                return -1;
-
-            // Remove common words and normalize
-            gradeStr = gradeStr.Trim().ToLower()
-                .Replace("grade", "")
-                .Replace("th", "")
-                .Replace("st", "")
-                .Replace("nd", "")
-                .Replace("rd", "")
-                .Replace(" ", "")
-                .Trim();
-
-            // Try direct integer parse
-            if (int.TryParse(gradeStr, out int grade))
-            {
-                if (grade >= 1 && grade <= 12)
-                    return grade;
-            }
-
-            // Try word-to-number conversion
-            grade = gradeStr switch
-            {
-                "first" or "one" or "1" => 1,
-                "second" or "two" or "2" => 2,
-                "third" or "three" or "3" => 3,
-                "fourth" or "four" or "4" => 4,
-                "fifth" or "five" or "5" => 5,
-                "sixth" or "six" or "6" => 6,
-                "seventh" or "seven" or "7" => 7,
-                "eighth" or "eight" or "8" => 8,
-                "ninth" or "nine" or "9" => 9,
-                "tenth" or "ten" or "10" => 10,
-                "eleventh" or "eleven" or "11" => 11,
-                "twelfth" or "twelve" or "12" => 12,
-                "k" or "kindergarten" or "0" => 0, // Optional: support kindergarten
-                "freshman" or "freshmen" => 9,
-                "sophomore" or "sophomores" => 10,
-                "junior" or "juniors" => 11,
-                "senior" or "seniors" => 12,
-                _ => -1
-            };
-
-            // Validate range (1-12, or 0 if kindergarten is supported)
-            if (grade >= 1 && grade <= 12)
-                return grade;
-
-            return -1;
-        }
-
-        private async Task<bool> CreateStudentViaImport(string studentId, string firstName, string lastName, int grade)
-        {
-            try
-            {
-                var request = new CreateStudentRequest
-                {
-                    OrganizationId = _currentOrganization!.OrganizationId,
-                    StudentIdentifier = studentId.ToUpper(),
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Grade = grade,
-                    RequestingUserId = _currentUser!.UserId
-                };
-
-                var json = JsonSerializer.Serialize(request);
-                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
-
-                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateStudent", content);
-                var jsonString = await response.Content.ReadAsStringAsync();
-
-                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return result?.Success == true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private DataTable ReadSpreadsheetFile(string filePath)
-        {
-            var extension = Path.GetExtension(filePath).ToLower();
-
-            if (extension == ".csv")
-            {
-                return ReadCsvFile(filePath);
-            }
-            else if (extension == ".xlsx" || extension == ".xls")
-            {
-                return ReadExcelFile(filePath);
-            }
-            else
-            {
-                throw new NotSupportedException("File format not supported. Please use CSV or Excel files.");
-            }
-        }
-
-        private DataTable ReadCsvFile(string filePath)
-        {
-            var dataTable = new DataTable();
-            var lines = File.ReadAllLines(filePath);
-
-            if (lines.Length == 0)
-                return dataTable;
-
-            // Parse header
-            var headers = ParseCsvLine(lines[0]);
-            foreach (var header in headers)
-            {
-                dataTable.Columns.Add(header.Trim());
-            }
-
-            // Parse data rows
-            for (int i = 1; i < lines.Length; i++)
-            {
-                if (string.IsNullOrWhiteSpace(lines[i]))
-                    continue;
-
-                var values = ParseCsvLine(lines[i]);
-                var row = dataTable.NewRow();
-
-                for (int j = 0; j < Math.Min(values.Length, dataTable.Columns.Count); j++)
-                {
-                    row[j] = values[j];
-                }
-
-                dataTable.Rows.Add(row);
-            }
-
-            return dataTable;
-        }
-
-        private string[] ParseCsvLine(string line)
-        {
-            var result = new List<string>();
-            var currentValue = new StringBuilder();
-            bool inQuotes = false;
-
-            for (int i = 0; i < line.Length; i++)
-            {
-                char c = line[i];
-
-                if (c == '"')
-                {
-                    inQuotes = !inQuotes;
-                }
-                else if (c == ',' && !inQuotes)
-                {
-                    result.Add(currentValue.ToString());
-                    currentValue.Clear();
-                }
-                else
-                {
-                    currentValue.Append(c);
-                }
-            }
-
-            result.Add(currentValue.ToString());
-            return result.ToArray();
-        }
-
-        private DataTable ReadExcelFile(string filePath)
-        {
-            // Excel files not supported yet
-            throw new NotSupportedException(
-                "Excel file support requires additional libraries.\n\n" +
-                "Please save your Excel file as CSV format and try again:\n" +
-                "1. Open the file in Excel\n" +
-                "2. File ? Save As\n" +
-                "3. Choose 'CSV (Comma delimited) (*.csv)'\n" +
-                "4. Import the CSV file");
-        }
-
-        private string? GetRowValue(DataRow row, Dictionary<string, string> columnMapping, string fieldName)
-        {
-            if (columnMapping.TryGetValue(fieldName, out var columnName))
-            {
-                if (row.Table.Columns.Contains(columnName))
-                {
-                    return row[columnName]?.ToString();
-                }
-            }
-            return null;
+            MessageBox.Show("Import Users is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         #endregion
     }

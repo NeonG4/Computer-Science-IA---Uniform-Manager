@@ -35,6 +35,10 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             importUniformsToolStripMenuItem = new ToolStripMenuItem();
             importStudentsToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator4 = new ToolStripSeparator();
+            exportUniformsToolStripMenuItem = new ToolStripMenuItem();
+            exportStudentsToolStripMenuItem = new ToolStripMenuItem();
+            exportUsersToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
             searchAndEditStudentToolStripMenuItem = new ToolStripMenuItem();
             searchUniformsToolStripMenuItem = new ToolStripMenuItem();
@@ -138,7 +142,7 @@
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { importUniformsToolStripMenuItem, importStudentsToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { importUniformsToolStripMenuItem, importStudentsToolStripMenuItem, toolStripSeparator4, exportUniformsToolStripMenuItem, exportStudentsToolStripMenuItem, exportUsersToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(46, 24);
             fileToolStripMenuItem.Text = "File";
@@ -156,6 +160,32 @@
             importStudentsToolStripMenuItem.Size = new Size(210, 26);
             importStudentsToolStripMenuItem.Text = "Import Students...";
             importStudentsToolStripMenuItem.Click += ImportStudentsToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator4
+            // 
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            toolStripSeparator4.Size = new Size(207, 6);
+            // 
+            // exportUniformsToolStripMenuItem
+            // 
+            exportUniformsToolStripMenuItem.Name = "exportUniformsToolStripMenuItem";
+            exportUniformsToolStripMenuItem.Size = new Size(210, 26);
+            exportUniformsToolStripMenuItem.Text = "Export Uniforms...";
+            exportUniformsToolStripMenuItem.Click += ExportUniformsToolStripMenuItem_Click;
+            // 
+            // exportStudentsToolStripMenuItem
+            // 
+            exportStudentsToolStripMenuItem.Name = "exportStudentsToolStripMenuItem";
+            exportStudentsToolStripMenuItem.Size = new Size(210, 26);
+            exportStudentsToolStripMenuItem.Text = "Export Students...";
+            exportStudentsToolStripMenuItem.Click += ExportStudentsToolStripMenuItem_Click;
+            // 
+            // exportUsersToolStripMenuItem
+            // 
+            exportUsersToolStripMenuItem.Name = "exportUsersToolStripMenuItem";
+            exportUsersToolStripMenuItem.Size = new Size(210, 26);
+            exportUsersToolStripMenuItem.Text = "Export Users...";
+            exportUsersToolStripMenuItem.Click += ExportUsersToolStripMenuItem_Click;
             // 
             // editToolStripMenuItem
             // 
@@ -836,5 +866,9 @@
         private ToolStripMenuItem importUniformsToolStripMenuItem;
         private ToolStripMenuItem importStudentsToolStripMenuItem;
         private ToolStripSeparator toolStripMenuItem2;
+        private ToolStripSeparator toolStripSeparator4;
+        private ToolStripMenuItem exportUniformsToolStripMenuItem;
+        private ToolStripMenuItem exportStudentsToolStripMenuItem;
+        private ToolStripMenuItem exportUsersToolStripMenuItem;
     }
 }
