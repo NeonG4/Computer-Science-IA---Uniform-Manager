@@ -876,7 +876,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             cmbType.Items.AddRange(new object[] {
-                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "", "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
@@ -893,7 +893,17 @@ namespace Computer_Science_IA___Uniform_Manager
             cmbType.SelectedIndexChanged += (s, ev) => {
                 int type = cmbType.SelectedIndex;
 
-                lblSize1.Visible = true;
+                if (type < 0)
+                {
+                    lblSize1.Text = "Size:";
+                    txtSize1.Visible = false;
+                    cmbSize1.Visible = false;
+                    lblSize2.Visible = false;
+                    txtSize2.Visible = false;
+                    cmbSize2.Visible = false;
+                    return;
+                }
+
                 txtSize1.Visible = true;
                 cmbSize1.Visible = false;
                 lblSize2.Visible = false;
@@ -932,7 +942,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     cmbSize2.Visible = true;
                     if (cmbSize2.SelectedIndex == -1) cmbSize2.SelectedIndex = 0;
                 }
-                else if (type >= 0)
+                else
                 {
                     lblSize1.Text = "Size:";
                 }
@@ -958,7 +968,7 @@ namespace Computer_Science_IA___Uniform_Manager
             addForm.Controls.AddRange(new Control[] {
                 lblUniformId, txtUniformId,
                 lblType, cmbType,
-                lblSize1, txtSize1, cmbSize1,
+                lblSize1, txtUniformId, cmbSize1,
                 lblSize2, txtSize2, cmbSize2,
                 btnCreate, btnCancel
             });
@@ -1094,7 +1104,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var editForm = new Form();
             editForm.Text = $"Edit Uniform - {uniformId}";
-            editForm.Size = new System.Drawing.Size(400, 280);
+            editForm.Size = new System.Drawing.Size(400, 540);
             editForm.StartPosition = FormStartPosition.CenterParent;
             editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             editForm.MaximizeBox = false;
@@ -1118,7 +1128,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             cmbType.Items.AddRange(new object[] {
-                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "", "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
@@ -1127,10 +1137,10 @@ namespace Computer_Science_IA___Uniform_Manager
             var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 98), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
 
-            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(240, 100), Size = new System.Drawing.Size(50, 20), Visible = false };
-            var txtSize2 = new TextBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), Visible = false };
-            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(290, 98), Size = new System.Drawing.Size(80, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
-            cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl" });
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 100), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 98), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 98), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
             // Different clothing types have different size formats, so adjust visible controls based on type
             cmbType.SelectedIndexChanged += (s, ev) => {
@@ -1191,7 +1201,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     lblSize1.Text = "Size:";
                 }
             };
-            cmbType.SelectedIndex = uniformType;
+            cmbType.SelectedIndex = uniformType + 1; // Shifted +1 to match the blank item in the ComboBox
 
             // Parse size string to populate text boxes
             if (uniformType == 6 && (size.ToLower().Contains("x") || size.Contains(" ")))
@@ -1232,7 +1242,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Save Changes",
                 DialogResult = DialogResult.OK,
-                Location = new System.Drawing.Point(200, 180),
+                Location = new System.Drawing.Point(200, 440),
                 Size = new System.Drawing.Size(170, 35)
             };
 
@@ -1240,7 +1250,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new System.Drawing.Point(20, 180),
+                Location = new System.Drawing.Point(20, 440),
                 Size = new System.Drawing.Size(150, 35)
             };
 
@@ -1257,7 +1267,14 @@ namespace Computer_Science_IA___Uniform_Manager
             if (editForm.ShowDialog() == DialogResult.OK)
             {
                 string finalSize = "";
-                int type = cmbType.SelectedIndex;
+                int type = cmbType.SelectedIndex - 1;
+
+                if (type < 0)
+                {
+                    MessageBox.Show("Please select a uniform type.", "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
                 if (type == 2) // Hat
                 {
@@ -2317,7 +2334,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var editForm = new Form();
             editForm.Text = $"Edit Student - {studentId}";
-            editForm.Size = new System.Drawing.Size(400, 500);
+            editForm.Size = new System.Drawing.Size(400, 540);
             editForm.StartPosition = FormStartPosition.CenterParent;
             editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             editForm.MaximizeBox = false;
@@ -2364,7 +2381,7 @@ namespace Computer_Science_IA___Uniform_Manager
             var btnUnassignAssignedUniform = new Button
             {
                 Text = "Unassign Selected",
-                Location = new System.Drawing.Point(230, 176),
+                Location = new System.Drawing.Point(230, 288),
                 Size = new System.Drawing.Size(140, 25)
             };
 
@@ -2432,7 +2449,17 @@ namespace Computer_Science_IA___Uniform_Manager
                 RefreshAssignedUniformsList();
             };
 
-            listAssignedUniforms.SelectedIndexChanged += async (s, ev) =>
+            listAssignedUniforms.SelectedIndexChanged += (s, ev) =>
+            {
+                if (isRefreshingAssignedUniforms || listAssignedUniforms.SelectedItem is not KeyValuePair<string, string> selectedUniform)
+                {
+                    return;
+                }
+
+                btnUnassignAssignedUniform.Enabled = !string.IsNullOrWhiteSpace(selectedUniform.Key);
+            };
+
+            listAssignedUniforms.DoubleClick += async (s, ev) =>
             {
                 if (isRefreshingAssignedUniforms || listAssignedUniforms.SelectedItem is not KeyValuePair<string, string> selectedUniform || string.IsNullOrWhiteSpace(selectedUniform.Key))
                 {
@@ -2453,12 +2480,12 @@ namespace Computer_Science_IA___Uniform_Manager
 
             RefreshAssignedUniformsList();
 
-            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 295), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 330), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
 
-            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 325), Size = new System.Drawing.Size(100, 20) };
+            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 360), Size = new System.Drawing.Size(100, 20) };
             var cmbType = new ComboBox
             {
-                Location = new System.Drawing.Point(130, 323),
+                Location = new System.Drawing.Point(130, 358),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
@@ -2467,14 +2494,14 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
-            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 365), Size = new System.Drawing.Size(100, 20) };
-            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 363), Size = new System.Drawing.Size(100, 20), Visible = false };
-            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 363), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 400), Size = new System.Drawing.Size(100, 20) };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 398), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 398), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
 
-            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 365), Size = new System.Drawing.Size(70, 20), Visible = false };
-            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 363), Size = new System.Drawing.Size(70, 20), Visible = false };
-            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 363), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 400), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 398), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 398), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
             cmbType.SelectedIndexChanged += (s, ev) => {
@@ -2516,6 +2543,9 @@ namespace Computer_Science_IA___Uniform_Manager
                     lblSize1.Text = "Size:";
                     txtSize1.Visible = false;
                     cmbSize1.Visible = true;
+                    lblSize2.Visible = false;
+                    txtSize2.Visible = false;
+                    cmbSize2.Visible = false;
                     if (cmbSize1.SelectedIndex == -1) cmbSize1.SelectedIndex = 0;
                 }
                 else if (type == 0) // Concert Coat
@@ -2537,7 +2567,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Save Changes",
                 DialogResult = DialogResult.OK,
-                Location = new System.Drawing.Point(200, 405),
+                Location = new System.Drawing.Point(200, 440),
                 Size = new System.Drawing.Size(170, 35)
             };
 
@@ -2545,7 +2575,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new System.Drawing.Point(20, 405),
+                Location = new System.Drawing.Point(20, 440),
                 Size = new System.Drawing.Size(150, 35)
             };
 
@@ -3214,8 +3244,9 @@ namespace Computer_Science_IA___Uniform_Manager
 
             if (_currentUser == null || _currentOrganization == null) return;
 
-            using var joinRequestsForm = new ManageJoinRequestsForm(_currentUser, _currentOrganization);
-            joinRequestsForm.ShowDialog();
+            // Open the user management window
+            using var manageUsersForm = new ManageJoinRequestsForm(_currentUser, _currentOrganization);
+            manageUsersForm.ShowDialog();
         }
 
         private void ManageUsersToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3445,7 +3476,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 var request = new CreateUniformRequest
                 {
                     OrganizationId = _currentOrganization!.OrganizationId,
-                    UniformIdentifier = uniformId.ToUpper(),
+                    UniformIdentifier = uniformId,
                     UniformType = uniformType,
                     Size = size,
                     RequestingUserId = _currentUser!.UserId
