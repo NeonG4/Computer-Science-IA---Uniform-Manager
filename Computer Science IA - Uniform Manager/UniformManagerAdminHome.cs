@@ -1267,7 +1267,7 @@ namespace Computer_Science_IA___Uniform_Manager
             if (editForm.ShowDialog() == DialogResult.OK)
             {
                 string finalSize = "";
-                int type = cmbType.SelectedIndex - 1;
+                int type = cmbType.SelectedIndex;
 
                 if (type < 0)
                 {
@@ -2665,7 +2665,6 @@ namespace Computer_Science_IA___Uniform_Manager
         private async Task ProcessQuickAssign(string studentId, int matchedType, string sizeQuery)
         {
             string? matchId = null;
-            sizeQuery = sizeQuery.ToLower();
 
             foreach (DataGridViewRow row in dataGridViewUniforms.Rows)
             {
@@ -2675,37 +2674,12 @@ namespace Computer_Science_IA___Uniform_Manager
                 int type = Convert.ToInt32(row.Cells["UniformType"].Value);
                 if (type != matchedType) continue;
 
-                string size = row.Cells["Size"].Value?.ToString()?.ToLower() ?? "";
+                string size = row.Cells["Size"].Value?.ToString() ?? "";
 
-                if (size == sizeQuery)
+                if (IsUniformSizeMatch(size, sizeQuery))
                 {
                     matchId = row.Cells["UniformIdentifier"].Value?.ToString();
                     break;
-                }
-                else
-                {
-                    // Handle pants size with space or 'x' separator
-                    var sizeParts = size.Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    var queryParts = sizeQuery.Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    if (sizeParts.Length == queryParts.Length)
-                    {
-                        bool isMatch = true;
-                        for (int i = 0; i < sizeParts.Length; i++)
-                        {
-                            if (!sizeParts[i].StartsWith(queryParts[i], StringComparison.OrdinalIgnoreCase))
-                            {
-                                isMatch = false;
-                                break;
-                            }
-                        }
-
-                        if (isMatch)
-                        {
-                            matchId = row.Cells["UniformIdentifier"].Value?.ToString();
-                            break;
-                        }
-                    }
                 }
             }
 
