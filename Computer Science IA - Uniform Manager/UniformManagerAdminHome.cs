@@ -3401,14 +3401,418 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
-        private void ImportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void ImportUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Import Uniforms is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var openDialog = new OpenFileDialog
+            {
+                Title = "Import Uniforms from CSV",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (openDialog.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                var lines = await File.ReadAllLinesAsync(openDialog.FileName, Encoding.UTF8);
+                if (lines.Length <= 1)
+                {
+                    MessageBox.Show("The selected file has no uniform rows to import.", "Import Uniforms", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var headerFields = ParseCsvLine(lines[0]);
+                var columnMap = BuildCsvColumnMap(headerFields);
+                var requiredUniformColumns = new[] { "UniformIdentifier", "UniformType", "Size" };
+                var missingUniformColumns = requiredUniformColumns.Where(c => !columnMap.ContainsKey(NormalizeCsvHeader(c))).ToList();
+
+                if (missingUniformColumns.Count > 0)
+                {
+                    MessageBox.Show(
+                        $"Missing required columns: {string.Join(", ", missingUniformColumns)}",
+                        "Import Uniforms",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                int imported = 0;
+                int skipped = 0;
+                int failed = 0;
+                var errors = new List<string>();
+
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var fields = ParseCsvLine(line);
+                    var uniformId = GetCsvFieldByColumn(fields, columnMap, "UniformIdentifier", "UniformId", "ID").Trim();
+                    var uniformTypeText = GetCsvFieldByColumn(fields, columnMap, "UniformType", "Type").Trim();
+                    var size = GetCsvFieldByColumn(fields, columnMap, "Size").Trim();
+
+                    if (string.IsNullOrWhiteSpace(uniformId) || string.IsNullOrWhiteSpace(uniformTypeText) || string.IsNullOrWhiteSpace(size))
+                    {
+                        skipped++;
+                        errors.Add($"Row {i + 1}: Missing required fields (UniformIdentifier, UniformType, or Size).");
+                        continue;
+                    }
+
+                    if (!TryParseUniformType(uniformTypeText, out int uniformType))
+                    {
+                        failed++;
+                        errors.Add($"Row {i + 1}: Invalid UniformType '{uniformTypeText}'.");
+                        continue;
+                    }
+
+                    var (success, message) = await CreateUniformForImportAsync(uniformId, uniformType, size);
+                    if (success)
+                    {
+                        imported++;
+                    }
+                    else
+                    {
+                        failed++;
+                        errors.Add($"Row {i + 1} ({uniformId}): {message}");
+                    }
+                }
+
+                await LoadUniformsAsync();
+
+                var summary = new StringBuilder();
+                summary.AppendLine($"Uniform import complete.");
+                summary.AppendLine();
+                summary.AppendLine($"Imported: {imported}");
+                summary.AppendLine($"Skipped: {skipped}");
+                summary.AppendLine($"Failed: {failed}");
+
+                if (errors.Count > 0)
+                {
+                    summary.AppendLine();
+                    summary.AppendLine("First errors:");
+                    foreach (var error in errors.Take(8))
+                    {
+                        summary.AppendLine($"- {error}");
+                    }
+
+                    if (errors.Count > 8)
+                    {
+                        summary.AppendLine($"...and {errors.Count - 8} more.");
+                    }
+                }
+
+                MessageBox.Show(summary.ToString(), "Import Uniforms", MessageBoxButtons.OK,
+                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to import uniforms:\n\n{ex.Message}", "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        private void ImportStudentsToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void ImportStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Import Students is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var openDialog = new OpenFileDialog
+            {
+                Title = "Import Students from CSV",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (openDialog.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                var lines = await File.ReadAllLinesAsync(openDialog.FileName, Encoding.UTF8);
+                if (lines.Length <= 1)
+                {
+                    MessageBox.Show("The selected file has no student rows to import.", "Import Students", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var headerFields = ParseCsvLine(lines[0]);
+                var columnMap = BuildCsvColumnMap(headerFields);
+                var requiredStudentColumns = new[] { "StudentIdentifier", "FirstName", "LastName", "Grade" };
+                var missingStudentColumns = requiredStudentColumns.Where(c => !columnMap.ContainsKey(NormalizeCsvHeader(c))).ToList();
+
+                if (missingStudentColumns.Count > 0)
+                {
+                    MessageBox.Show(
+                        $"Missing required columns: {string.Join(", ", missingStudentColumns)}",
+                        "Import Students",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                int imported = 0;
+                int skipped = 0;
+                int failed = 0;
+                var errors = new List<string>();
+
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var fields = ParseCsvLine(line);
+                    var studentId = GetCsvFieldByColumn(fields, columnMap, "StudentIdentifier", "StudentId", "ID").Trim();
+                    var firstName = GetCsvFieldByColumn(fields, columnMap, "FirstName", "First").Trim();
+                    var lastName = GetCsvFieldByColumn(fields, columnMap, "LastName", "Last").Trim();
+                    var gradeText = GetCsvFieldByColumn(fields, columnMap, "Grade").Trim();
+
+                    if (string.IsNullOrWhiteSpace(studentId) || string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(gradeText))
+                    {
+                        skipped++;
+                        errors.Add($"Row {i + 1}: Missing required fields (StudentIdentifier, FirstName, LastName, or Grade).");
+                        continue;
+                    }
+
+                    if (!int.TryParse(gradeText, out int grade) || grade < 1 || grade > 12)
+                    {
+                        failed++;
+                        errors.Add($"Row {i + 1}: Invalid Grade '{gradeText}'.");
+                        continue;
+                    }
+
+                    var (success, message) = await CreateStudentForImportAsync(studentId, firstName, lastName, grade);
+                    if (success)
+                    {
+                        imported++;
+                    }
+                    else
+                    {
+                        failed++;
+                        errors.Add($"Row {i + 1} ({studentId}): {message}");
+                    }
+                }
+
+                await LoadStudentsAsync();
+
+                var summary = new StringBuilder();
+                summary.AppendLine("Student import complete.");
+                summary.AppendLine();
+                summary.AppendLine($"Imported: {imported}");
+                summary.AppendLine($"Skipped: {skipped}");
+                summary.AppendLine($"Failed: {failed}");
+
+                if (errors.Count > 0)
+                {
+                    summary.AppendLine();
+                    summary.AppendLine("First errors:");
+                    foreach (var error in errors.Take(8))
+                    {
+                        summary.AppendLine($"- {error}");
+                    }
+
+                    if (errors.Count > 8)
+                    {
+                        summary.AppendLine($"...and {errors.Count - 8} more.");
+                    }
+                }
+
+                MessageBox.Show(summary.ToString(), "Import Students", MessageBoxButtons.OK,
+                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to import students:\n\n{ex.Message}", "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static string GetCsvField(List<string> fields, int index)
+        {
+            return index >= 0 && index < fields.Count ? fields[index] : string.Empty;
+        }
+
+        private static Dictionary<string, int> BuildCsvColumnMap(List<string> headerFields)
+        {
+            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < headerFields.Count; i++)
+            {
+                var normalized = NormalizeCsvHeader(headerFields[i]);
+                if (!string.IsNullOrWhiteSpace(normalized) && !map.ContainsKey(normalized))
+                {
+                    map[normalized] = i;
+                }
+            }
+
+            return map;
+        }
+
+        private static string NormalizeCsvHeader(string? header)
+        {
+            if (string.IsNullOrWhiteSpace(header)) return string.Empty;
+            return header.Trim().Replace(" ", "").Replace("_", "").Replace("-", "").ToLowerInvariant();
+        }
+
+        private static string GetCsvFieldByColumn(List<string> fields, Dictionary<string, int> columnMap, params string[] aliases)
+        {
+            foreach (var alias in aliases)
+            {
+                var normalized = NormalizeCsvHeader(alias);
+                if (columnMap.TryGetValue(normalized, out var index))
+                {
+                    return GetCsvField(fields, index);
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static List<string> ParseCsvLine(string line)
+        {
+            var result = new List<string>();
+            var current = new StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                var c = line[i];
+
+                if (c == '"')
+                {
+                    if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = !inQuotes;
+                    }
+                }
+                else if (c == ',' && !inQuotes)
+                {
+                    result.Add(current.ToString());
+                    current.Clear();
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+
+            result.Add(current.ToString());
+            return result;
+        }
+
+        private static bool TryParseUniformType(string value, out int uniformType)
+        {
+            value = value.Trim();
+
+            if (int.TryParse(value, out uniformType) && uniformType is >= 0 and <= 6)
+            {
+                return true;
+            }
+
+            uniformType = value.ToLowerInvariant() switch
+            {
+                "concert coat" => 0,
+                "drum major coat" => 1,
+                "hat" => 2,
+                "marching coat" => 3,
+                "marching shorts" => 4,
+                "marching socks" => 5,
+                "pants" => 6,
+                _ => -1
+            };
+
+            return uniformType >= 0;
+        }
+
+        private async Task<(bool Success, string Message)> CreateUniformForImportAsync(string uniformId, int uniformType, string size)
+        {
+            try
+            {
+                var request = new CreateUniformRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    UniformIdentifier = uniformId.Trim().ToUpperInvariant(),
+                    UniformType = uniformType,
+                    Size = size,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateUniform", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    return (true, string.Empty);
+                }
+
+                return (false, result?.Message ?? $"HTTP {(int)response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        private async Task<(bool Success, string Message)> CreateStudentForImportAsync(string studentId, string firstName, string lastName, int grade)
+        {
+            try
+            {
+                var request = new CreateStudentRequest
+                {
+                    OrganizationId = _currentOrganization!.OrganizationId,
+                    StudentIdentifier = studentId.Trim().ToUpperInvariant(),
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Grade = grade,
+                    RequestingUserId = _currentUser!.UserId
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, MediaTypeHeaderValue.Parse("application/json"));
+
+                var response = await httpClient.PostAsync($"{API_BASE_URL}/CreateStudent", content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<StudentResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    return (true, string.Empty);
+                }
+
+                return (false, result?.Message ?? $"HTTP {(int)response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
         }
 
         private static string EscapeCsvValue(string? value)
