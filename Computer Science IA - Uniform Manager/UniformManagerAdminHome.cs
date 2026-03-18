@@ -1398,9 +1398,25 @@ namespace Computer_Science_IA___Uniform_Manager
                         DisplayMember = "Display"
                     };
 
+                    var assignmentsByStudent = uniformsSource
+                        .Where(u => !string.IsNullOrEmpty(u.AssignedStudentId))
+                        .GroupBy(u => u.AssignedStudentId!, StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(u => $"{u.UniformIdentifier} ({(string.IsNullOrWhiteSpace(u.UniformTypeName) ? u.UniformType.ToString() : u.UniformTypeName)})").ToList(),
+                            StringComparer.OrdinalIgnoreCase);
+
                     foreach (var student in missingStudents)
                     {
-                        listMissing.Items.Add(new { Student = student, Display = $"{student.StudentIdentifier} - {student.FullName}" });
+                        var assignedList = assignmentsByStudent.TryGetValue(student.StudentIdentifier, out var assigned)
+                            ? string.Join(", ", assigned)
+                            : "None";
+
+                        listMissing.Items.Add(new
+                        {
+                            Student = student,
+                            Display = $"{student.StudentIdentifier} - {student.FullName} | Assigned: {assignedList}"
+                        });
                     }
 
                     if (listMissing.Items.Count > 0)
@@ -2085,7 +2101,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var editForm = new Form();
             editForm.Text = $"Edit Student - {studentId}";
-            editForm.Size = new System.Drawing.Size(400, 390);
+            editForm.Size = new System.Drawing.Size(400, 500);
             editForm.StartPosition = FormStartPosition.CenterParent;
             editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             editForm.MaximizeBox = false;
@@ -2127,12 +2143,38 @@ namespace Computer_Science_IA___Uniform_Manager
                 Value = grade
             };
 
-            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 180), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+            var lblAssignedUniforms = new Label { Text = "Assigned Uniforms:", Location = new System.Drawing.Point(20, 180), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
 
-            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 210), Size = new System.Drawing.Size(100, 20) };
+            var listAssignedUniforms = new ListBox
+            {
+                Location = new System.Drawing.Point(20, 205),
+                Size = new System.Drawing.Size(350, 80)
+            };
+
+            var uniformsSource = (List<UniformDto>?)dataGridViewUniforms.DataSource;
+            var assignedUniforms = uniformsSource
+                ?.Where(u => string.Equals(u.AssignedStudentId, studentId, StringComparison.OrdinalIgnoreCase))
+                .Select(u => $"{u.UniformIdentifier} ({(string.IsNullOrWhiteSpace(u.UniformTypeName) ? u.UniformType.ToString() : u.UniformTypeName)})")
+                .ToList() ?? new List<string>();
+
+            if (assignedUniforms.Count == 0)
+            {
+                listAssignedUniforms.Items.Add("None");
+            }
+            else
+            {
+                foreach (var uniform in assignedUniforms)
+                {
+                    listAssignedUniforms.Items.Add(uniform);
+                }
+            }
+
+            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 295), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+
+            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 325), Size = new System.Drawing.Size(100, 20) };
             var cmbType = new ComboBox
             {
-                Location = new System.Drawing.Point(130, 208),
+                Location = new System.Drawing.Point(130, 323),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
@@ -2141,14 +2183,14 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
-            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 250), Size = new System.Drawing.Size(100, 20), Visible = false };
-            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 248), Size = new System.Drawing.Size(100, 20), Visible = false };
-            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 248), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 365), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 363), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 363), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
 
-            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(240, 250), Size = new System.Drawing.Size(50, 20), Visible = false };
-            var txtSize2 = new TextBox { Location = new System.Drawing.Point(290, 248), Size = new System.Drawing.Size(80, 20), Visible = false };
-            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(290, 248), Size = new System.Drawing.Size(80, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 365), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 363), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 363), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
             cmbType.SelectedIndexChanged += (s, ev) => {
@@ -2200,7 +2242,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Save Changes",
                 DialogResult = DialogResult.OK,
-                Location = new System.Drawing.Point(200, 300),
+                Location = new System.Drawing.Point(200, 405),
                 Size = new System.Drawing.Size(170, 35)
             };
 
@@ -2208,7 +2250,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new System.Drawing.Point(20, 300),
+                Location = new System.Drawing.Point(20, 405),
                 Size = new System.Drawing.Size(150, 35)
             };
 
@@ -2217,6 +2259,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 lblFirstName, txtFirstName,
                 lblLastName, txtLastName,
                 lblGrade, numGrade,
+                lblAssignedUniforms, listAssignedUniforms,
                 lblQuickAssign, lblType, cmbType,
                 lblSize1, txtSize1, cmbSize1,
                 lblSize2, txtSize2, cmbSize2,
@@ -2647,7 +2690,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var searchForm = new Form();
             searchForm.Text = "Find Student";
-            searchForm.Size = new Size(400, 180);
+            searchForm.Size = new Size(400, 230);
             searchForm.StartPosition = FormStartPosition.CenterParent;
             searchForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             searchForm.MaximizeBox = false;
@@ -2655,14 +2698,23 @@ namespace Computer_Science_IA___Uniform_Manager
 
             var lblInfo = new Label
             {
-                Text = "Enter Student ID to view and edit information:",
+                Text = "Search for a student by:",
                 Location = new Point(20, 20),
                 Size = new Size(350, 20)
             };
 
+            var cmbSearchBy = new ComboBox
+            {
+                Location = new Point(20, 45),
+                Size = new Size(340, 20),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbSearchBy.Items.AddRange(new object[] { "Student ID", "First Name", "Last Name" });
+            cmbSearchBy.SelectedIndex = 0;
+
             var txtStudentId = new TextBox
             {
-                Location = new Point(20, 50),
+                Location = new Point(20, 80),
                 Size = new Size(340, 20),
                 CharacterCasing = CharacterCasing.Upper
             };
@@ -2671,7 +2723,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Find and Edit",
                 DialogResult = DialogResult.OK,
-                Location = new Point(190, 90),
+                Location = new Point(190, 130),
                 Size = new Size(170, 35)
             };
 
@@ -2679,36 +2731,131 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new Point(20, 90),
+                Location = new Point(20, 130),
                 Size = new Size(150, 35)
             };
 
-            searchForm.Controls.AddRange(new Control[] { lblInfo, txtStudentId, btnSearch, btnCancel });
+            searchForm.Controls.AddRange(new Control[] { lblInfo, cmbSearchBy, txtStudentId, btnSearch, btnCancel });
             searchForm.AcceptButton = btnSearch;
             searchForm.CancelButton = btnCancel;
 
             if (searchForm.ShowDialog() == DialogResult.OK)
             {
-                string searchId = txtStudentId.Text.Trim();
-                if (string.IsNullOrWhiteSpace(searchId)) return;
+                string query = txtStudentId.Text.Trim();
+                if (string.IsNullOrWhiteSpace(query)) return;
 
-                bool found = false;
-                foreach (DataGridViewRow row in dataGridViewStudents.Rows)
+                var studentsSource = (List<StudentDto>?)dataGridViewStudents.DataSource;
+                if (studentsSource == null || studentsSource.Count == 0)
                 {
-                    if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(searchId, StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        dataGridViewStudents.ClearSelection();
-                        row.Selected = true;
-
-                        await EditSelectedStudent();
-                        found = true;
-                        break;
-                    }
+                    MessageBox.Show("No students available. Please load students first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
 
-                if (!found)
+                async Task<bool> EditStudentByIdAsync(string studentId)
                 {
-                    MessageBox.Show($"Student '{searchId}' not found in this organization.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    foreach (DataGridViewRow row in dataGridViewStudents.Rows)
+                    {
+                        if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(studentId, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            dataGridViewStudents.ClearSelection();
+                            row.Selected = true;
+                            await EditSelectedStudent();
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                List<StudentDto> matches = cmbSearchBy.SelectedIndex switch
+                {
+                    0 => studentsSource
+                        .Where(s => s.StudentIdentifier.Equals(query, StringComparison.OrdinalIgnoreCase))
+                        .ToList(),
+                    1 => studentsSource
+                        .Where(s => s.FirstName.Equals(query, StringComparison.OrdinalIgnoreCase))
+                        .ToList(),
+                    _ => studentsSource
+                        .Where(s => s.LastName.Equals(query, StringComparison.OrdinalIgnoreCase))
+                        .ToList()
+                };
+
+                if (matches.Count == 0)
+                {
+                    MessageBox.Show($"No students found for '{query}'.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                if (matches.Count == 1)
+                {
+                    if (!await EditStudentByIdAsync(matches[0].StudentIdentifier))
+                    {
+                        MessageBox.Show($"Student '{matches[0].StudentIdentifier}' not found in this organization.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    return;
+                }
+
+                using var selectForm = new Form();
+                selectForm.Text = "Select Student";
+                selectForm.Size = new Size(420, 350);
+                selectForm.StartPosition = FormStartPosition.CenterParent;
+                selectForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                selectForm.MaximizeBox = false;
+                selectForm.MinimizeBox = false;
+
+                var lblSelect = new Label
+                {
+                    Text = "Multiple matches found. Select a student:",
+                    Location = new Point(20, 20),
+                    Size = new Size(360, 20)
+                };
+
+                var listMatches = new ListBox
+                {
+                    Location = new Point(20, 50),
+                    Size = new Size(360, 200),
+                    DisplayMember = "Display"
+                };
+
+                foreach (var student in matches)
+                {
+                    listMatches.Items.Add(new { Student = student, Display = $"{student.StudentIdentifier} - {student.FullName}" });
+                }
+
+                if (listMatches.Items.Count > 0)
+                {
+                    listMatches.SelectedIndex = 0;
+                }
+
+                var btnSelect = new Button
+                {
+                    Text = "Select",
+                    DialogResult = DialogResult.OK,
+                    Location = new Point(210, 265),
+                    Size = new Size(170, 35)
+                };
+
+                var btnSelectCancel = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Location = new Point(20, 265),
+                    Size = new Size(150, 35)
+                };
+
+                selectForm.Controls.AddRange(new Control[] { lblSelect, listMatches, btnSelect, btnSelectCancel });
+                selectForm.AcceptButton = btnSelect;
+                selectForm.CancelButton = btnSelectCancel;
+
+                if (selectForm.ShowDialog() == DialogResult.OK && listMatches.SelectedItem != null)
+                {
+                    dynamic selectedItem = listMatches.SelectedItem;
+                    StudentDto selectedStudent = selectedItem.Student;
+
+                    if (!await EditStudentByIdAsync(selectedStudent.StudentIdentifier))
+                    {
+                        MessageBox.Show($"Student '{selectedStudent.StudentIdentifier}' not found in this organization.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                 }
             }
         }

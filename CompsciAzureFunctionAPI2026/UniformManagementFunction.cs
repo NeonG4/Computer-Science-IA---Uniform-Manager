@@ -739,12 +739,12 @@ namespace CompsciAzureFunctionAPI2026
                 }
 
                 int accountLevel = (int)permResult;
-                if (accountLevel != 0) // 0 = Administrator
+                if (accountLevel > 1) // 0 = Administrator, 1 = User
                 {
                     return new ObjectResult(new UniformResponse
                     {
                         Success = false,
-                        Message = "Only administrators can assign uniforms."
+                        Message = "Only administrators and users can assign uniforms."
                     })
                     {
                         StatusCode = StatusCodes.Status403Forbidden
