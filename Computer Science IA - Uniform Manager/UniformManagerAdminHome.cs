@@ -2376,8 +2376,11 @@ namespace Computer_Science_IA___Uniform_Manager
                 ValueMember = "Key"
             };
 
+            bool isRefreshingAssignedUniforms = false;
+
             void RefreshAssignedUniformsList()
             {
+                isRefreshingAssignedUniforms = true;
                 listAssignedUniforms.Items.Clear();
 
                 var uniformsSource = (List<UniformDto>?)dataGridViewUniforms.DataSource;
@@ -2403,6 +2406,8 @@ namespace Computer_Science_IA___Uniform_Manager
                     listAssignedUniforms.SelectedIndex = 0;
                     btnUnassignAssignedUniform.Enabled = true;
                 }
+
+                isRefreshingAssignedUniforms = false;
             }
 
             btnUnassignAssignedUniform.Click += async (s, ev) =>
@@ -2425,6 +2430,25 @@ namespace Computer_Science_IA___Uniform_Manager
 
                 await UnassignUniformAsync(selectedUniform.Key);
                 RefreshAssignedUniformsList();
+            };
+
+            listAssignedUniforms.SelectedIndexChanged += async (s, ev) =>
+            {
+                if (isRefreshingAssignedUniforms || listAssignedUniforms.SelectedItem is not KeyValuePair<string, string> selectedUniform || string.IsNullOrWhiteSpace(selectedUniform.Key))
+                {
+                    return;
+                }
+
+                foreach (DataGridViewRow row in dataGridViewUniforms.Rows)
+                {
+                    if (row.Cells["UniformIdentifier"].Value?.ToString()?.Equals(selectedUniform.Key, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        dataGridViewUniforms.ClearSelection();
+                        row.Selected = true;
+                        await EditSelectedUniform();
+                        break;
+                    }
+                }
             };
 
             RefreshAssignedUniformsList();
