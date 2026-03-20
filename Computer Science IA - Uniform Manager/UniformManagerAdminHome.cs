@@ -27,17 +27,26 @@ namespace Computer_Science_IA___Uniform_Manager
         private List<UniformDto>? _uniformsCache;
         private bool _isUniformFilterActive;
 
+        /// <summary>
+        /// Initializes a new instance of the admin home form.
+        /// </summary>
         public UniformManagerAdminHome()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the admin home form with the signed-in user and selected organization.
+        /// </summary>
         public UniformManagerAdminHome(UserInfo user, OrganizationDto organization) : this()
         {
             _currentUser = user;
             _currentOrganization = organization;
         }
 
+        /// <summary>
+        /// Handles form load by validating context, updating the title, and loading initial data.
+        /// </summary>
         private async void UniformManagerAdminHome_Load(object sender, EventArgs e)
         {
             // If no user or organization is set, this shouldn't happen 
@@ -55,6 +64,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await LoadAllData();
         }
 
+        /// <summary>
+        /// Converts an account level value to its display text.
+        /// </summary>
         private string GetAccountLevelText(int? accountLevel)
         {
             return accountLevel switch
@@ -66,6 +78,9 @@ namespace Computer_Science_IA___Uniform_Manager
             };
         }
 
+        /// <summary>
+        /// Loads uniforms, students, and users concurrently.
+        /// </summary>
         private async Task LoadAllData()
         {
             try
@@ -85,6 +100,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Loads uniforms for the current organization and configures uniform UI controls by role.
+        /// </summary>
         private async Task LoadUniformsAsync()
         {
             try
@@ -177,6 +195,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Loads students for the current organization and configures student UI controls by role.
+        /// </summary>
         private async Task LoadStudentsAsync()
         {
             try
@@ -216,6 +237,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Opens the uniform search dialog and applies selected filters.
+        /// </summary>
         private void SearchUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var uniformsSource = _uniformsCache ?? (List<UniformDto>?)dataGridViewUniforms.DataSource;
@@ -312,6 +336,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Clears the active uniform search filter and restores the full list.
+        /// </summary>
         private void ClearUniformSearchToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!_isUniformFilterActive)
@@ -333,6 +360,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Determines whether a uniform size matches a user-entered search pattern.
+        /// </summary>
         private static bool IsUniformSizeMatch(string sizeValue, string searchValue)
         {
             if (string.IsNullOrWhiteSpace(searchValue))
@@ -369,6 +399,9 @@ namespace Computer_Science_IA___Uniform_Manager
             return true;
         }
 
+        /// <summary>
+        /// Splits and normalizes size text into comparable parts.
+        /// </summary>
         private static string[] SplitSizeParts(string value)
         {
             var normalized = value.Trim().ToLowerInvariant();
@@ -381,6 +414,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 .ToArray();
         }
 
+        /// <summary>
+        /// Loads organization users for admins and configures user management UI.
+        /// </summary>
         private async Task LoadUsersAsync()
         {
             try
@@ -450,6 +486,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Applies display formatting to the uniforms grid.
+        /// </summary>
         private void FormatUniformsGrid()
         {
             if (dataGridViewUniforms.Columns.Contains("UniformId"))
@@ -495,6 +534,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 dataGridViewUniforms.Columns["LastModified"].Visible = false;
         }
 
+        /// <summary>
+        /// Applies display formatting to the students grid.
+        /// </summary>
         private void FormatStudentsGrid()
         {
             if (dataGridViewStudents.Columns.Contains("StudentId"))
@@ -522,6 +564,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 dataGridViewStudents.Columns["LastModified"].Visible = false;
         }
 
+        /// <summary>
+        /// Applies display formatting to the organization users grid.
+        /// </summary>
         private void FormatOrganizationUsersGrid()
         {
             if (dataGridViewUsers.Columns.Contains("UserId"))
@@ -546,6 +591,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Converts a role level to role display text.
+        /// </summary>
         private string GetRoleText(int accountLevel)
         {
             return accountLevel switch
@@ -664,16 +712,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Handles the Change User Role button click.
+        /// </summary>
         private async void ButtonChangeUserRole_Click(object sender, EventArgs e)
         {
             await ChangeSelectedUserRole();
         }
 
+        /// <summary>
+        /// Handles the Change Role context menu action.
+        /// </summary>
         private async void ChangeRoleToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await ChangeSelectedUserRole();
         }
 
+        /// <summary>
+        /// Opens the change-role workflow for the selected user.
+        /// </summary>
         private async Task ChangeSelectedUserRole()
         {
             if (dataGridViewUsers.SelectedRows.Count == 0) return;
@@ -735,6 +792,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Sends a request to update a user's role in the current organization.
+        /// </summary>
         private async Task UpdateUserRoleAsync(int targetUserId, int newAccountLevel, string userName)
         {
             try
@@ -777,16 +837,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Handles the Remove User button click.
+        /// </summary>
         private async void ButtonRemoveUserFromOrg_Click(object sender, EventArgs e)
         {
             await RemoveSelectedUser();
         }
 
+        /// <summary>
+        /// Handles the Remove User context menu action.
+        /// </summary>
         private async void RemoveFromOrgToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await RemoveSelectedUser();
         }
 
+        /// <summary>
+        /// Confirms and removes the selected user from the organization.
+        /// </summary>
         private async Task RemoveSelectedUser()
         {
             if (dataGridViewUsers.SelectedRows.Count == 0) return;
@@ -809,6 +878,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await RemoveUserAsync(selectedUserId, $"{user.FirstName} {user.LastName}");
         }
 
+        /// <summary>
+        /// Sends a request to remove a user from the organization.
+        /// </summary>
         private async Task RemoveUserAsync(int targetUserId, string userName)
         {
             try
@@ -845,16 +917,25 @@ namespace Computer_Science_IA___Uniform_Manager
 
         #region Uniform Management
 
+        /// <summary>
+        /// Handles the Add Uniform button click.
+        /// </summary>
         private async void ButtonAddUniform_Click(object sender, EventArgs e)
         {
             await AddNewUniform();
         }
 
+        /// <summary>
+        /// Handles the Add Uniform context menu action.
+        /// </summary>
         private async void AddUniformToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await AddNewUniform();
         }
 
+        /// <summary>
+        /// Opens the add-uniform dialog and submits a create request when confirmed.
+        /// </summary>
         private async Task AddNewUniform()
         {
             using var addForm = new Form();
@@ -1040,6 +1121,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Creates a new uniform in the system.
+        /// </summary>
         private async Task CreateUniformAsync(string uniformId, int uniformType, string size)
         {
             try
@@ -1322,6 +1406,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Updates an existing uniform in the system.
+        /// </summary>
         private async Task UpdateUniformAsync(string uniformId, int uniformType, string size)
         {
             try
@@ -1378,16 +1465,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Handles the Delete Selected Uniform menu action.
+        /// </summary>
         private async void ButtonDeleteUniform_Click(object sender, EventArgs e)
         {
             await DeleteSelectedUniform();
         }
 
+        /// <summary>
+        /// Handles the Delete Uniform context menu action.
+        /// </summary>
         private async void DeleteUniformToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await DeleteSelectedUniform();
         }
 
+        /// <summary>
+        /// Deletes the currently selected uniform.
+        /// </summary>
         private async Task DeleteSelectedUniform()
         {
             if (dataGridViewUniforms.SelectedRows.Count == 0) return;
@@ -1407,6 +1503,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await DeleteUniformAsync(uniformId);
         }
 
+        /// <summary>
+        /// Deletes a uniform by its ID.
+        /// </summary>
         private async Task DeleteUniformAsync(string uniformId)
         {
             try
@@ -1440,241 +1539,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
-        private async void UnassignAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (_currentOrganization?.UserAccountLevel != 0)
-            {
-                MessageBox.Show("Only administrators can unassign all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var confirmResult = MessageBox.Show(
-                $"Are you sure you want to unassign ALL uniforms in {_currentOrganization.OrganizationName} from their students?\n\n" +
-                $"This will also check in all currently checked out uniforms.",
-                "Confirm Unassign All",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (confirmResult != DialogResult.Yes) return;
-
-            // Second confirmation
-            if (!ConfirmActionWithOrganizationName("unassign all uniforms")) return;
-
-            try
-            {
-                var response = await httpClient.PostAsync(
-                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms/unassignall?userId={_currentUser!.UserId}",
-                    new StringContent("", Encoding.UTF8, "application/json")); // empty body
-
-                var jsonString = await response.Content.ReadAsStringAsync();
-
-                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                if (result?.Success == true)
-                {
-                    MessageBox.Show(result.Message ?? "All uniforms unassigned successfully.", "Success",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadUniformsAsync();
-                }
-                else
-                {
-                    MessageBox.Show($"Error unassigning all uniforms:\n\n{result?.Message ?? "Unknown error"}",
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error unassigning all uniforms:\n\n{ex.Message}",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
-        private async void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (_currentOrganization?.UserAccountLevel > 1)
-            {
-                MessageBox.Show("Only administrators and users can review missing assignments.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var selectTypeForm = new Form
-            {
-                Text = "Check Missing Uniform Assignments",
-                Size = new Size(400, 200),
-                StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false
-            };
-
-            var lblPrompt = new Label
-            {
-                Text = "Select uniform type to check:",
-                Location = new Point(20, 20),
-                Size = new Size(350, 20)
-            };
-
-            var cmbType = new ComboBox
-            {
-                Location = new Point(20, 50),
-                Size = new Size(340, 20),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cmbType.Items.AddRange(new object[] {
-                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
-                "Marching Shorts", "Marching Socks", "Pants"
-            });
-            cmbType.SelectedIndex = 0;
-
-            var btnCheck = new Button
-            {
-                Text = "Check Assigned",
-                DialogResult = DialogResult.OK,
-                Location = new Point(190, 100),
-                Size = new Size(170, 35)
-            };
-
-            var btnCancel = new Button
-            {
-                Text = "Cancel",
-                DialogResult = DialogResult.Cancel,
-                Location = new Point(20, 100),
-                Size = new Size(150, 35)
-            };
-
-            selectTypeForm.Controls.AddRange(new Control[] { lblPrompt, cmbType, btnCheck, btnCancel });
-            selectTypeForm.AcceptButton = btnCheck;
-            selectTypeForm.CancelButton = btnCancel;
-
-            if (selectTypeForm.ShowDialog() == DialogResult.OK)
-            {
-                int selectedType = cmbType.SelectedIndex;
-                string typeName = cmbType.Text;
-
-                var studentsSource = (List<StudentDto>?)dataGridViewStudents.DataSource;
-                var uniformsSource = (List<UniformDto>?)dataGridViewUniforms.DataSource;
-
-                if (studentsSource == null || studentsSource.Count == 0)
-                {
-                    MessageBox.Show("No students available. Please load students first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                if (uniformsSource == null)
-                {
-                    uniformsSource = new List<UniformDto>();
-                }
-
-                // Find students who don't have ANY assigned uniform of the selected type
-                var assignedStudentIds = uniformsSource
-                    .Where(u => u.UniformType == selectedType && !string.IsNullOrEmpty(u.AssignedStudentId))
-                    .Select(u => u.AssignedStudentId!)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var missingStudents = studentsSource
-                    .Where(s => !assignedStudentIds.Contains(s.StudentIdentifier))
-                    .ToList();
-
-                if (missingStudents.Count == 0)
-                {
-                    MessageBox.Show($"All students have a '{typeName}' assigned to them!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    using var missingForm = new Form
-                    {
-                        Text = $"Missing '{typeName}' Assignments",
-                        Size = new Size(520, 420),
-                        StartPosition = FormStartPosition.CenterParent,
-                        FormBorderStyle = FormBorderStyle.FixedDialog,
-                        MaximizeBox = false,
-                        MinimizeBox = false
-                    };
-
-                    var lblMissing = new Label
-                    {
-                        Text = $"Select a student missing '{typeName}' to edit their attire:",
-                        Location = new Point(20, 20),
-                        Size = new Size(460, 25)
-                    };
-
-                    var listMissing = new ListBox
-                    {
-                        Location = new Point(20, 50),
-                        Size = new Size(460, 240),
-                        DisplayMember = "Display"
-                    };
-
-                    var assignmentsByStudent = uniformsSource
-                        .Where(u => !string.IsNullOrEmpty(u.AssignedStudentId))
-                        .GroupBy(u => u.AssignedStudentId!, StringComparer.OrdinalIgnoreCase)
-                        .ToDictionary(
-                            g => g.Key,
-                            g => g.Select(u => $"{u.UniformIdentifier} ({(string.IsNullOrWhiteSpace(u.UniformTypeName) ? u.UniformType.ToString() : u.UniformTypeName)})").ToList(),
-                            StringComparer.OrdinalIgnoreCase);
-
-                    foreach (var student in missingStudents)
-                    {
-                        var assignedList = assignmentsByStudent.TryGetValue(student.StudentIdentifier, out var assigned)
-                            ? string.Join(", ", assigned)
-                            : "None";
-
-                        listMissing.Items.Add(new
-                        {
-                            Student = student,
-                            Display = $"{student.StudentIdentifier} - {student.FullName} | Assigned: {assignedList}"
-                        });
-                    }
-
-                    if (listMissing.Items.Count > 0)
-                    {
-                        listMissing.SelectedIndex = 0;
-                    }
-
-                    var btnEdit = new Button
-                    {
-                        Text = "Edit Student",
-                        DialogResult = DialogResult.OK,
-                        Location = new Point(310, 310),
-                        Size = new Size(170, 35)
-                    };
-
-                    var btnClose = new Button
-                    {
-                        Text = "Close",
-                        DialogResult = DialogResult.Cancel,
-                        Location = new Point(20, 310),
-                        Size = new Size(150, 35)
-                    };
-
-                    missingForm.Controls.AddRange(new Control[] { lblMissing, listMissing, btnEdit, btnClose });
-                    missingForm.AcceptButton = btnEdit;
-                    missingForm.CancelButton = btnClose;
-
-                    if (missingForm.ShowDialog() == DialogResult.OK && listMissing.SelectedItem != null)
-                    {
-                        dynamic selectedItem = listMissing.SelectedItem;
-                        StudentDto selectedStudent = selectedItem.Student;
-
-                        foreach (DataGridViewRow row in dataGridViewStudents.Rows)
-                        {
-                            if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(selectedStudent.StudentIdentifier, StringComparison.OrdinalIgnoreCase) == true)
-                            {
-                                dataGridViewStudents.ClearSelection();
-                                row.Selected = true;
-                                await EditSelectedStudent();
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        /// <summary>
+        /// Unassigns and deletes all uniforms in the current organization.
+        /// </summary>
         private async void DeleteAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_currentOrganization?.UserAccountLevel != 0)
@@ -1726,16 +1593,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Assigns a selected uniform to a student.
+        /// </summary>
         private async void ButtonAssignUniform_Click(object sender, EventArgs e)
         {
             await AssignSelectedUniform();
         }
 
+        /// <summary>
+        /// Handles the Assign Uniform context menu action.
+        /// </summary>
         private async void AssignUniformToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await AssignSelectedUniform();
         }
 
+        /// <summary>
+        /// Assigns the selected uniform to the chosen student.
+        /// </summary>
         private async Task AssignSelectedUniform()
         {
             if (dataGridViewUniforms.SelectedRows.Count == 0) return;
@@ -1825,6 +1701,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Sends a request to assign a uniform to a student.
+        /// </summary>
         private async Task AssignUniformAsync(string uniformId, string studentId)
         {
             try
@@ -1888,16 +1767,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Handles the Unassign Selected button click.
+        /// </summary>
         private async void ButtonUnassignUniform_Click(object sender, EventArgs e)
         {
             await UnassignSelectedUniform();
         }
 
+        /// <summary>
+        /// Handles the Unassign Uniform context menu action.
+        /// </summary>
         private async void UnassignUniformToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await UnassignSelectedUniform();
         }
 
+        /// <summary>
+        /// Unassigns the selected uniform from the assigned student.
+        /// </summary>
         private async Task UnassignSelectedUniform()
         {
             if (dataGridViewUniforms.SelectedRows.Count == 0) return;
@@ -1936,6 +1824,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await UnassignUniformAsync(uniformId);
         }
 
+        /// <summary>
+        /// Sends a request to unassign a uniform from a student.
+        /// </summary>
         private async Task UnassignUniformAsync(string uniformId)
         {
             try
@@ -1976,16 +1867,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Checks out or in the selected uniform.
+        /// </summary>
         private async void ButtonCheckOutUniform_Click(object sender, EventArgs e)
         {
             await CheckOutSelectedUniform();
         }
 
+        /// <summary>
+        /// Handles the Check Out/In Uniform context menu action.
+        /// </summary>
         private async void CheckOutInToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await CheckOutSelectedUniform();
         }
 
+        /// <summary>
+        /// Checks out the selected uniform to the assigned student, or checks it in if already checked out.
+        /// </summary>
         private async Task CheckOutSelectedUniform()
         {
             if (dataGridViewUniforms.SelectedRows.Count == 0) return;
@@ -2026,6 +1926,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await CheckOutUniformAsync(uniformId, !isCheckedOut);
         }
 
+        /// <summary>
+        /// Sends a request to check out or check in a uniform.
+        /// </summary>
         private async Task CheckOutUniformAsync(string uniformId, bool checkOut)
         {
             try
@@ -2067,16 +1970,25 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Updates the condition statuses of the selected uniform.
+        /// </summary>
         private async void ButtonUpdateConditions_Click(object sender, EventArgs e)
         {
             await UpdateSelectedUniformConditions();
         }
 
+        /// <summary>
+        /// Handles the Update Conditions context menu action.
+        /// </summary>
         private async void UpdateConditionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await UpdateSelectedUniformConditions();
         }
 
+        /// <summary>
+        /// Opens the update conditions dialog for the selected uniform.
+        /// </summary>
         private async Task UpdateSelectedUniformConditions()
         {
             if (dataGridViewUniforms.SelectedRows.Count == 0) return;
@@ -2146,6 +2058,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Sends a request to update the conditions of a uniform.
+        /// </summary>
         private async Task UpdateUniformConditionsAsync(string uniformId, int[] conditions)
         {
             try
@@ -2191,16 +2106,25 @@ namespace Computer_Science_IA___Uniform_Manager
 
         #region Student Management
 
+        /// <summary>
+        /// Handles the Add Student button click.
+        /// </summary>
         private async void ButtonAddStudent_Click(object sender, EventArgs e)
         {
             await AddNewStudent();
         }
 
+        /// <summary>
+        /// Handles the Add Student context menu action.
+        /// </summary>
         private async void AddStudentToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await AddNewStudent();
         }
 
+        /// <summary>
+        /// Opens the add-student dialog and submits a create request when confirmed.
+        /// </summary>
         private async Task AddNewStudent()
         {
             using var addForm = new Form();
@@ -2268,6 +2192,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Creates a new student in the system.
+        /// </summary>
         private async Task CreateStudentAsync(string studentId, string firstName, string lastName, int grade)
         {
             try
@@ -2704,6 +2631,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Updates an existing student in the system.
+        /// </summary>
         private async Task UpdateStudentAsync(string studentId, string firstName, string lastName, int grade)
         {
             try
@@ -2779,6 +2709,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await DeleteStudentAsync(studentId);
         }
 
+        /// <summary>
+        /// Deletes a student by their ID.
+        /// </summary>
         private async Task DeleteStudentAsync(string studentId)
         {
             try
@@ -2814,6 +2747,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Deletes all students in the current organization.
+        /// </summary>
         private async void DeleteAllStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_currentOrganization?.UserAccountLevel != 0)
@@ -3242,7 +3178,7 @@ namespace Computer_Science_IA___Uniform_Manager
             using var manageUsersForm = new ManageOrganizationUsersForm(_currentUser, _currentOrganization);
             if (manageUsersForm.ShowDialog() == DialogResult.OK)
             {
-                // Refresh users list if needed
+                // Refresh the list if needed
                 LoadUsersAsync().ConfigureAwait(false);
             }
         }
@@ -3703,7 +3639,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else if (c == ',' && !inQuotes)
                 {
-                    result.Add(current.ToString());
+                    result.add(current.ToString());
                     current.Clear();
                 }
                 else
