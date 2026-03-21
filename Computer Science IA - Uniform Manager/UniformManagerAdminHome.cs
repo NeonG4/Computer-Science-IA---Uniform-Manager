@@ -101,6 +101,68 @@ namespace Computer_Science_IA___Uniform_Manager
         }
 
         /// <summary>
+        /// Checks which students are missing a selected uniform type.
+        /// </summary>
+        private void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show(
+                "Use Search and Edit Student to review assignments for now.",
+                "Check Missing Assignments",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        /// <summary>
+        /// Unassigns all uniforms in the current organization.
+        /// </summary>
+        private async void UnassignAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can unassign all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to unassign ALL uniforms in {_currentOrganization.OrganizationName}?",
+                "Confirm Unassign All",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            try
+            {
+                var response = await httpClient.PostAsync(
+                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms/unassignall?userId={_currentUser!.UserId}",
+                    new StringContent(string.Empty, Encoding.UTF8, "application/json"));
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "All uniforms unassigned successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUniformsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error unassigning all uniforms:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error unassigning all uniforms:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
         /// Loads uniforms for the current organization and configures uniform UI controls by role.
         /// </summary>
         private async Task LoadUniformsAsync()
@@ -957,7 +1019,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             cmbType.Items.AddRange(new object[] {
-                "", "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
@@ -1049,7 +1111,7 @@ namespace Computer_Science_IA___Uniform_Manager
             addForm.Controls.AddRange(new Control[] {
                 lblUniformId, txtUniformId,
                 lblType, cmbType,
-                lblSize1, txtUniformId, cmbSize1,
+                lblSize1, txtSize1, cmbSize1,
                 lblSize2, txtSize2, cmbSize2,
                 btnCreate, btnCancel
             });
@@ -1188,7 +1250,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             using var editForm = new Form();
             editForm.Text = $"Edit Uniform - {uniformId}";
-            editForm.Size = new System.Drawing.Size(400, 540);
+            editForm.Size = new System.Drawing.Size(400, 600);
             editForm.StartPosition = FormStartPosition.CenterParent;
             editForm.FormBorderStyle = FormBorderStyle.FixedDialog;
             editForm.MaximizeBox = false;
@@ -1212,7 +1274,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             cmbType.Items.AddRange(new object[] {
-                "", "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
@@ -1228,7 +1290,7 @@ namespace Computer_Science_IA___Uniform_Manager
 
             // Different clothing types have different size formats, so adjust visible controls based on type
             cmbType.SelectedIndexChanged += (s, ev) => {
-                int type = cmbType.SelectedIndex - 1;
+                int type = cmbType.SelectedIndex;
 
                 if (type < 0)
                 {
@@ -1285,7 +1347,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     lblSize1.Text = "Size:";
                 }
             };
-            cmbType.SelectedIndex = uniformType + 1; // Shifted +1 to match the blank item in the ComboBox
+            cmbType.SelectedIndex = uniformType;
 
             // Parse size string to populate text boxes
             if (uniformType == 6 && (size.ToLower().Contains("x") || size.Contains(" ")))
@@ -1833,6 +1895,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 var request = new UnassignUniformRequest
                 {
+                    OrganizationId = _currentOrganization!.OrganizationId,
                     UniformIdentifier = uniformId,
                     RequestingUserId = _currentUser!.UserId
                 };
@@ -2407,12 +2470,42 @@ namespace Computer_Science_IA___Uniform_Manager
 
             RefreshAssignedUniformsList();
 
-            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 330), Size = new System.Drawing.Size(350, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+            var btnSaveStudent = new Button
+            {
+                Text = "Save Changes",
+                Location = new System.Drawing.Point(20, 325),
+                Size = new System.Drawing.Size(170, 32)
+            };
 
-            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 360), Size = new System.Drawing.Size(100, 20) };
+            btnSaveStudent.Click += async (s, ev) =>
+            {
+                if (string.IsNullOrWhiteSpace(txtFirstName.Text) || string.IsNullOrWhiteSpace(txtLastName.Text))
+                {
+                    MessageBox.Show("First name and last name are required.", "Validation Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                await UpdateStudentAsync(
+                    studentId,
+                    txtFirstName.Text.Trim(),
+                    txtLastName.Text.Trim(),
+                    (int)numGrade.Value);
+            };
+
+            var lblQuickAssign = new Label { Text = "Quick Assign Uniform:", Location = new System.Drawing.Point(20, 365), Size = new System.Drawing.Size(190, 20), Font = new Font(Label.DefaultFont, FontStyle.Bold) };
+
+            var btnAssignQuick = new Button
+            {
+                Text = "Assign",
+                Location = new System.Drawing.Point(230, 360),
+                Size = new System.Drawing.Size(140, 30)
+            };
+
+            var lblType = new Label { Text = "Type:", Location = new System.Drawing.Point(20, 395), Size = new System.Drawing.Size(100, 20) };
             var cmbType = new ComboBox
             {
-                Location = new System.Drawing.Point(130, 358),
+                Location = new System.Drawing.Point(130, 393),
                 Size = new System.Drawing.Size(240, 20),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
@@ -2421,18 +2514,74 @@ namespace Computer_Science_IA___Uniform_Manager
                 "Marching Shorts", "Marching Socks", "Pants"
             });
 
-            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 400), Size = new System.Drawing.Size(100, 20) };
-            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 398), Size = new System.Drawing.Size(100, 20), Visible = false };
-            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 398), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize1 = new Label { Text = "Size:", Location = new System.Drawing.Point(20, 435), Size = new System.Drawing.Size(100, 20) };
+            var txtSize1 = new TextBox { Location = new System.Drawing.Point(130, 433), Size = new System.Drawing.Size(100, 20), Visible = false };
+            var cmbSize1 = new ComboBox { Location = new System.Drawing.Point(130, 433), Size = new System.Drawing.Size(100, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize1.Items.AddRange(new object[] { "xs", "s", "m", "l", "xl" });
 
-            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 400), Size = new System.Drawing.Size(70, 20), Visible = false };
-            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 398), Size = new System.Drawing.Size(70, 20), Visible = false };
-            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 398), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
+            var lblSize2 = new Label { Text = "Length:", Location = new System.Drawing.Point(230, 435), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var txtSize2 = new TextBox { Location = new System.Drawing.Point(310, 433), Size = new System.Drawing.Size(70, 20), Visible = false };
+            var cmbSize2 = new ComboBox { Location = new System.Drawing.Point(310, 433), Size = new System.Drawing.Size(70, 20), DropDownStyle = ComboBoxStyle.DropDownList, Visible = false };
             cmbSize2.Items.AddRange(new object[] { "", "xs", "s", "m", "l", "xl", "r" });
 
+            bool TryBuildQuickAssign(out int type, out string sizeQuery)
+            {
+                type = cmbType.SelectedIndex - 1;
+                sizeQuery = string.Empty;
+
+                if (type == -1)
+                {
+                    return false;
+                }
+
+                if (type == 2)
+                {
+                    sizeQuery = cmbSize1.Text.Trim();
+                }
+                else
+                {
+                    string s1 = txtSize1.Text.Trim();
+                    string s2 = txtSize2.Text.Trim();
+
+                    if (type == 6 && string.IsNullOrWhiteSpace(s2) && (s1.ToLower().Contains("x") || s1.Contains(" ")))
+                    {
+                        var parts = s1.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
+                    }
+                    else if ((type == 3 || type == 0) && string.IsNullOrWhiteSpace(s2) && s1.Contains(" "))
+                    {
+                        var parts = s1.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0) s1 = parts[0].Trim();
+                        if (parts.Length > 1) s2 = parts[1].Trim();
+                    }
+
+                    sizeQuery = s1;
+                    if (type == 6 && !string.IsNullOrWhiteSpace(s2)) sizeQuery += $"x{s2}";
+                    else if (type == 3 && !string.IsNullOrWhiteSpace(s2)) sizeQuery += $" {s2}";
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text)) sizeQuery += $" {cmbSize2.Text}";
+                    else if (type == 0 && !string.IsNullOrWhiteSpace(s2) && string.IsNullOrWhiteSpace(cmbSize2.Text)) sizeQuery += $" {s2}";
+                }
+
+                return !string.IsNullOrWhiteSpace(sizeQuery);
+            }
+
+            btnAssignQuick.Click += async (s, ev) =>
+            {
+                if (TryBuildQuickAssign(out int type, out string sizeQuery))
+                {
+                    await ProcessQuickAssign(studentId, type, sizeQuery);
+                    RefreshAssignedUniformsList();
+                }
+                else
+                {
+                    MessageBox.Show("Select a type and enter a size to quick assign.", "Quick Assign",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            };
+
             cmbType.SelectedIndexChanged += (s, ev) => {
-                int type = cmbType.SelectedIndex;
+                int type = cmbType.SelectedIndex - 1;
 
                 if (type < 0)
                 {
@@ -2492,9 +2641,9 @@ namespace Computer_Science_IA___Uniform_Manager
 
             var btnSave = new Button
             {
-                Text = "Save Changes",
+                Text = "Save and Close",
                 DialogResult = DialogResult.OK,
-                Location = new System.Drawing.Point(200, 440),
+                Location = new System.Drawing.Point(200, 500),
                 Size = new System.Drawing.Size(170, 35)
             };
 
@@ -2502,7 +2651,7 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new System.Drawing.Point(20, 440),
+                Location = new System.Drawing.Point(20, 500),
                 Size = new System.Drawing.Size(150, 35)
             };
 
@@ -2512,7 +2661,9 @@ namespace Computer_Science_IA___Uniform_Manager
                 lblLastName, txtLastName,
                 lblGrade, numGrade,
                 lblAssignedUniforms, btnUnassignAssignedUniform, listAssignedUniforms,
+                btnSaveStudent,
                 lblQuickAssign, lblType, cmbType,
+                btnAssignQuick,
                 lblSize1, txtSize1, cmbSize1,
                 lblSize2, txtSize2, cmbSize2,
                 btnSave, btnCancel
@@ -2535,56 +2686,9 @@ namespace Computer_Science_IA___Uniform_Manager
                     txtLastName.Text.Trim(),
                     (int)numGrade.Value);
 
-                int type = cmbType.SelectedIndex - 1;
-                if (type != -1)
+                if (TryBuildQuickAssign(out int type, out string sizeQuery))
                 {
-                    string sizeQuery = "";
-                    if (type == 2) // Hat
-                    {
-                        sizeQuery = cmbSize1.Text;
-                    }
-                    else
-                    {
-                        string s1 = txtSize1.Text.Trim();
-                        string s2 = txtSize2.Text.Trim();
-
-                        // Parse combined size if put entirely in the first box
-                        if (type == 6 && string.IsNullOrWhiteSpace(s2) && (s1.ToLower().Contains("x") || s1.Contains(" ")))
-                        {
-                            var parts = s1.ToLower().Split(new[] { 'x', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length > 0) s1 = parts[0].Trim();
-                            if (parts.Length > 1) s2 = parts[1].Trim();
-                        }
-                        else if ((type == 3 || type == 0) && string.IsNullOrWhiteSpace(s2) && s1.Contains(" "))
-                        {
-                            var parts = s1.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length > 0) s1 = parts[0].Trim();
-                            if (parts.Length > 1) s2 = parts[1].Trim();
-                        }
-
-                        sizeQuery = s1;
-                        if (type == 6 && !string.IsNullOrWhiteSpace(s2))
-                        {
-                            sizeQuery += $"x{s2}";
-                        }
-                        else if (type == 3 && !string.IsNullOrWhiteSpace(s2))
-                        {
-                            sizeQuery += $" {s2}";
-                        }
-                        else if (type == 0 && !string.IsNullOrWhiteSpace(cmbSize2.Text))
-                        {
-                            sizeQuery += $" {cmbSize2.Text}";
-                        }
-                        else if (type == 0 && !string.IsNullOrWhiteSpace(s2) && string.IsNullOrWhiteSpace(cmbSize2.Text))
-                        {
-                            sizeQuery += $" {s2}";
-                        }
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(sizeQuery))
-                    {
-                        await ProcessQuickAssign(studentId, type, sizeQuery);
-                    }
+                    await ProcessQuickAssign(studentId, type, sizeQuery);
                 }
             }
         }
@@ -3639,7 +3743,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else if (c == ',' && !inQuotes)
                 {
-                    result.add(current.ToString());
+                    result.Add(current.ToString());
                     current.Clear();
                 }
                 else
