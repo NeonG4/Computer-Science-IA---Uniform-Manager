@@ -2312,6 +2312,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await EditSelectedStudent();
         }
 
+        /// <summary>
+        /// Opens the selected student's edit dialog, allowing profile updates, assigned-uniform management, and quick uniform assignment.
+        /// </summary>
         private async Task EditSelectedStudent()
         {
             if (dataGridViewStudents.SelectedRows.Count == 0) return;
@@ -2693,6 +2696,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Attempts to find the first unassigned uniform matching the requested type and size, then assigns it to the specified student.
+        /// </summary>
         private async Task ProcessQuickAssign(string studentId, int matchedType, string sizeQuery)
         {
             string? matchId = null;
@@ -2791,6 +2797,9 @@ namespace Computer_Science_IA___Uniform_Manager
             await DeleteSelectedStudent();
         }
 
+        /// <summary>
+        /// Confirms and deletes the currently selected student, including warning about uniform unassignment side effects.
+        /// </summary>
         private async Task DeleteSelectedStudent()
         {
             if (dataGridViewStudents.SelectedRows.Count == 0) return;
@@ -2906,6 +2915,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Shows a final confirmation dialog that requires typing the current organization name before allowing a destructive action.
+        /// </summary>
         private bool ConfirmActionWithOrganizationName(string actionDescription)
         {
             using var confirmForm = new Form();
@@ -2958,6 +2970,9 @@ namespace Computer_Science_IA___Uniform_Manager
             return confirmForm.ShowDialog() == DialogResult.OK;
         }
 
+        /// <summary>
+        /// Promotes all students by one grade level, with an optional prompt to remove seniors and unassign their uniforms.
+        /// </summary>
         private async void PromoteStudentsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_currentOrganization?.UserAccountLevel != 0)
@@ -3019,6 +3034,9 @@ namespace Computer_Science_IA___Uniform_Manager
             }
         }
 
+        /// <summary>
+        /// Opens a student search workflow and launches the edit dialog for the selected matching student.
+        /// </summary>
         private async void SearchAndEditStudentToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_currentOrganization?.UserAccountLevel > 1) // Viewers cannot edit
