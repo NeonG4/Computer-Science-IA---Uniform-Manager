@@ -2202,7 +2202,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 var request = new CreateStudentRequest
                 {
                     OrganizationId = _currentOrganization!.OrganizationId,
-                    StudentIdentifier = studentId,
+                    StudentIdentifier = studentId.Trim().ToUpperInvariant(),
                     FirstName = firstName,
                     LastName = lastName,
                     Grade = grade,
@@ -3362,51 +3362,40 @@ namespace Computer_Science_IA___Uniform_Manager
                     return;
                 }
 
-                var headerFields = ParseCsvLine(lines[0]);
-                var columnMap = BuildCsvColumnMap(headerFields);
-                var requiredUniformColumns = new[] { "UniformIdentifier", "UniformType", "Size" };
-                var missingUniformColumns = requiredUniformColumns.Where(c => !columnMap.ContainsKey(NormalizeCsvHeader(c))).ToList();
-
-                if (missingUniformColumns.Count > 0)
+                var importTable = BuildImportDataTable(lines);
+                using var mappingForm = new ImportColumnMappingForm(importTable, ImportColumnMappingForm.ImportType.Uniforms);
+                if (mappingForm.ShowDialog() != DialogResult.OK)
                 {
-                    MessageBox.Show(
-                        $"Missing required columns: {string.Join(", ", missingUniformColumns)}",
-                        "Import Uniforms",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
                     return;
                 }
+
+                var fieldMap = mappingForm.ColumnMapping;
 
                 int imported = 0;
                 int skipped = 0;
                 int failed = 0;
                 var errors = new List<string>();
 
-                for (int i = 1; i < lines.Length; i++)
+                int rowNumber = 2;
+                foreach (DataRow row in mappingForm.ImportData.Rows)
                 {
-                    var line = lines[i];
-                    if (string.IsNullOrWhiteSpace(line))
-                    {
-                        skipped++;
-                        continue;
-                    }
-
-                    var fields = ParseCsvLine(line);
-                    var uniformId = GetCsvFieldByColumn(fields, columnMap, "UniformIdentifier", "UniformId", "ID").Trim();
-                    var uniformTypeText = GetCsvFieldByColumn(fields, columnMap, "UniformType", "Type").Trim();
-                    var size = GetCsvFieldByColumn(fields, columnMap, "Size").Trim();
+                    var uniformId = GetMappedFieldValue(row, fieldMap, "UniformIdentifier").Trim();
+                    var uniformTypeText = GetMappedFieldValue(row, fieldMap, "UniformType").Trim();
+                    var size = GetMappedFieldValue(row, fieldMap, "Size").Trim();
 
                     if (string.IsNullOrWhiteSpace(uniformId) || string.IsNullOrWhiteSpace(uniformTypeText) || string.IsNullOrWhiteSpace(size))
                     {
                         skipped++;
-                        errors.Add($"Row {i + 1}: Missing required fields (UniformIdentifier, UniformType, or Size).");
+                        errors.Add($"Row {rowNumber}: Missing required fields (UniformIdentifier, UniformType, or Size).\\");
+                        rowNumber++;
                         continue;
                     }
 
                     if (!TryParseUniformType(uniformTypeText, out int uniformType))
                     {
                         failed++;
-                        errors.Add($"Row {i + 1}: Invalid UniformType '{uniformTypeText}'.");
+                        errors.Add($"Row {rowNumber}: Invalid UniformType '{uniformTypeText}'.");
+                        rowNumber++;
                         continue;
                     }
 
@@ -3418,14 +3407,16 @@ namespace Computer_Science_IA___Uniform_Manager
                     else
                     {
                         failed++;
-                        errors.Add($"Row {i + 1} ({uniformId}): {message}");
+                        errors.Add($"Row {rowNumber} ({uniformId}): {message}");
                     }
+
+                    rowNumber++;
                 }
 
                 await LoadUniformsAsync();
 
                 var summary = new StringBuilder();
-                summary.AppendLine($"Uniform import complete.");
+                summary.AppendLine("Uniform import complete.");
                 summary.AppendLine();
                 summary.AppendLine($"Imported: {imported}");
                 summary.AppendLine($"Skipped: {skipped}");
@@ -3480,52 +3471,41 @@ namespace Computer_Science_IA___Uniform_Manager
                     return;
                 }
 
-                var headerFields = ParseCsvLine(lines[0]);
-                var columnMap = BuildCsvColumnMap(headerFields);
-                var requiredStudentColumns = new[] { "StudentIdentifier", "FirstName", "LastName", "Grade" };
-                var missingStudentColumns = requiredStudentColumns.Where(c => !columnMap.ContainsKey(NormalizeCsvHeader(c))).ToList();
-
-                if (missingStudentColumns.Count > 0)
+                var importTable = BuildImportDataTable(lines);
+                using var mappingForm = new ImportColumnMappingForm(importTable, ImportColumnMappingForm.ImportType.Students);
+                if (mappingForm.ShowDialog() != DialogResult.OK)
                 {
-                    MessageBox.Show(
-                        $"Missing required columns: {string.Join(", ", missingStudentColumns)}",
-                        "Import Students",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
                     return;
                 }
+
+                var fieldMap = mappingForm.ColumnMapping;
 
                 int imported = 0;
                 int skipped = 0;
                 int failed = 0;
                 var errors = new List<string>();
 
-                for (int i = 1; i < lines.Length; i++)
+                int rowNumber = 2;
+                foreach (DataRow row in mappingForm.ImportData.Rows)
                 {
-                    var line = lines[i];
-                    if (string.IsNullOrWhiteSpace(line))
-                    {
-                        skipped++;
-                        continue;
-                    }
-
-                    var fields = ParseCsvLine(line);
-                    var studentId = GetCsvFieldByColumn(fields, columnMap, "StudentIdentifier", "StudentId", "ID").Trim();
-                    var firstName = GetCsvFieldByColumn(fields, columnMap, "FirstName", "First").Trim();
-                    var lastName = GetCsvFieldByColumn(fields, columnMap, "LastName", "Last").Trim();
-                    var gradeText = GetCsvFieldByColumn(fields, columnMap, "Grade").Trim();
+                    var studentId = GetMappedFieldValue(row, fieldMap, "StudentIdentifier").Trim();
+                    var firstName = GetMappedFieldValue(row, fieldMap, "FirstName").Trim();
+                    var lastName = GetMappedFieldValue(row, fieldMap, "LastName").Trim();
+                    var gradeText = GetMappedFieldValue(row, fieldMap, "Grade").Trim();
 
                     if (string.IsNullOrWhiteSpace(studentId) || string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(gradeText))
                     {
                         skipped++;
-                        errors.Add($"Row {i + 1}: Missing required fields (StudentIdentifier, FirstName, LastName, or Grade).");
+                        errors.Add($"Row {rowNumber}: Missing required fields (StudentIdentifier, FirstName, LastName, or Grade).\\");
+                        rowNumber++;
                         continue;
                     }
 
                     if (!int.TryParse(gradeText, out int grade) || grade < 1 || grade > 12)
                     {
                         failed++;
-                        errors.Add($"Row {i + 1}: Invalid Grade '{gradeText}'.");
+                        errors.Add($"Row {rowNumber}: Invalid Grade '{gradeText}'.");
+                        rowNumber++;
                         continue;
                     }
 
@@ -3537,8 +3517,10 @@ namespace Computer_Science_IA___Uniform_Manager
                     else
                     {
                         failed++;
-                        errors.Add($"Row {i + 1} ({studentId}): {message}");
+                        errors.Add($"Row {rowNumber} ({studentId}): {message}");
                     }
+
+                    rowNumber++;
                 }
 
                 await LoadStudentsAsync();
@@ -3572,6 +3554,62 @@ namespace Computer_Science_IA___Uniform_Manager
             {
                 MessageBox.Show($"Failed to import students:\n\n{ex.Message}", "Import Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static DataTable BuildImportDataTable(string[] lines)
+        {
+            var table = new DataTable();
+            var headers = ParseCsvLine(lines[0]);
+
+            var columnNames = new List<string>();
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var baseName = string.IsNullOrWhiteSpace(headers[i]) ? $"Column{i + 1}" : headers[i].Trim();
+                var uniqueName = baseName;
+                int suffix = 2;
+                while (columnNames.Any(c => c.Equals(uniqueName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    uniqueName = $"{baseName}_{suffix}";
+                    suffix++;
+                }
+
+                columnNames.Add(uniqueName);
+                table.Columns.Add(uniqueName);
+            }
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(lines[i]))
+                {
+                    continue;
+                }
+
+                var values = ParseCsvLine(lines[i]);
+                var row = table.NewRow();
+                for (int col = 0; col < table.Columns.Count; col++)
+                {
+                    row[col] = col < values.Count ? values[col] : string.Empty;
+                }
+
+                table.Rows.Add(row);
+            }
+
+            return table;
+        }
+
+        private static string GetMappedFieldValue(DataRow row, Dictionary<string, string> fieldMap, string fieldName)
+        {
+            if (!fieldMap.TryGetValue(fieldName, out var sourceColumn) || string.IsNullOrWhiteSpace(sourceColumn))
+            {
+                return string.Empty;
+            }
+
+            if (!row.Table.Columns.Contains(sourceColumn))
+            {
+                return string.Empty;
+            }
+
+            return row[sourceColumn]?.ToString() ?? string.Empty;
         }
 
         private static string GetCsvField(List<string> fields, int index)
@@ -3639,7 +3677,7 @@ namespace Computer_Science_IA___Uniform_Manager
                 }
                 else if (c == ',' && !inQuotes)
                 {
-                    result.add(current.ToString());
+                    result.Add(current.ToString());
                     current.Clear();
                 }
                 else
@@ -3770,6 +3808,239 @@ namespace Computer_Science_IA___Uniform_Manager
         {
             MessageBox.Show("Import Users is temporarily unavailable.", "Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        private async void UnassignAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel != 0)
+            {
+                MessageBox.Show("Only administrators can unassign all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmResult = MessageBox.Show(
+                $"Are you sure you want to unassign ALL uniforms in {_currentOrganization.OrganizationName} from their students?\n\n" +
+                $"This will also check in all currently checked out uniforms.",
+                "Confirm Unassign All",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            if (!ConfirmActionWithOrganizationName("unassign all uniforms")) return;
+
+            try
+            {
+                var response = await httpClient.PostAsync(
+                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms/unassignall?userId={_currentUser!.UserId}",
+                    new StringContent("", Encoding.UTF8, "application/json"));
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result?.Success == true)
+                {
+                    MessageBox.Show(result.Message ?? "All uniforms unassigned successfully.", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadUniformsAsync();
+                }
+                else
+                {
+                    MessageBox.Show($"Error unassigning all uniforms:\n\n{result?.Message ?? "Unknown error"}",
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error unassigning all uniforms:\n\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_currentOrganization?.UserAccountLevel > 1)
+            {
+                MessageBox.Show("Only administrators and users can review missing assignments.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectTypeForm = new Form
+            {
+                Text = "Check Missing Uniform Assignments",
+                Size = new Size(400, 200),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var lblPrompt = new Label
+            {
+                Text = "Select uniform type to check:",
+                Location = new Point(20, 20),
+                Size = new Size(350, 20)
+            };
+
+            var cmbType = new ComboBox
+            {
+                Location = new Point(20, 50),
+                Size = new Size(340, 20),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbType.Items.AddRange(new object[] {
+                "Concert Coat", "Drum Major Coat", "Hat", "Marching Coat",
+                "Marching Shorts", "Marching Socks", "Pants"
+            });
+            cmbType.SelectedIndex = 0;
+
+            var btnCheck = new Button
+            {
+                Text = "Check Assigned",
+                DialogResult = DialogResult.OK,
+                Location = new Point(190, 100),
+                Size = new Size(170, 35)
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(20, 100),
+                Size = new Size(150, 35)
+            };
+
+            selectTypeForm.Controls.AddRange(new Control[] { lblPrompt, cmbType, btnCheck, btnCancel });
+            selectTypeForm.AcceptButton = btnCheck;
+            selectTypeForm.CancelButton = btnCancel;
+
+            if (selectTypeForm.ShowDialog() == DialogResult.OK)
+            {
+                int selectedType = cmbType.SelectedIndex;
+                string typeName = cmbType.Text;
+
+                var studentsSource = (List<StudentDto>?)dataGridViewStudents.DataSource;
+                var uniformsSource = (List<UniformDto>?)dataGridViewUniforms.DataSource;
+
+                if (studentsSource == null || studentsSource.Count == 0)
+                {
+                    MessageBox.Show("No students available. Please load students first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (uniformsSource == null)
+                {
+                    uniformsSource = new List<UniformDto>();
+                }
+
+                var assignedStudentIds = uniformsSource
+                    .Where(u => u.UniformType == selectedType && !string.IsNullOrEmpty(u.AssignedStudentId))
+                    .Select(u => u.AssignedStudentId!)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var missingStudents = studentsSource
+                    .Where(s => !assignedStudentIds.Contains(s.StudentIdentifier))
+                    .ToList();
+
+                if (missingStudents.Count == 0)
+                {
+                    MessageBox.Show($"All students have a '{typeName}' assigned to them!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    using var missingForm = new Form
+                    {
+                        Text = $"Missing '{typeName}' Assignments",
+                        Size = new Size(520, 420),
+                        StartPosition = FormStartPosition.CenterParent,
+                        FormBorderStyle = FormBorderStyle.FixedDialog,
+                        MaximizeBox = false,
+                        MinimizeBox = false
+                    };
+
+                    var lblMissing = new Label
+                    {
+                        Text = $"Select a student missing '{typeName}' to edit their attire:",
+                        Location = new Point(20, 20),
+                        Size = new Size(460, 25)
+                    };
+
+                    var listMissing = new ListBox
+                    {
+                        Location = new Point(20, 50),
+                        Size = new Size(460, 240),
+                        DisplayMember = "Display"
+                    };
+
+                    var assignmentsByStudent = uniformsSource
+                        .Where(u => !string.IsNullOrEmpty(u.AssignedStudentId))
+                        .GroupBy(u => u.AssignedStudentId!, StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(u => $"{u.UniformIdentifier} ({(string.IsNullOrWhiteSpace(u.UniformTypeName) ? u.UniformType.ToString() : u.UniformTypeName)})").ToList(),
+                            StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var student in missingStudents)
+                    {
+                        var assignedList = assignmentsByStudent.TryGetValue(student.StudentIdentifier, out var assigned)
+                            ? string.Join(", ", assigned)
+                            : "None";
+
+                        listMissing.Items.Add(new
+                        {
+                            Student = student,
+                            Display = $"{student.StudentIdentifier} - {student.FullName} | Assigned: {assignedList}"
+                        });
+                    }
+
+                    if (listMissing.Items.Count > 0)
+                    {
+                        listMissing.SelectedIndex = 0;
+                    }
+
+                    var btnEdit = new Button
+                    {
+                        Text = "Edit Student",
+                        DialogResult = DialogResult.OK,
+                        Location = new Point(310, 310),
+                        Size = new Size(170, 35)
+                    };
+
+                    var btnClose = new Button
+                    {
+                        Text = "Close",
+                        DialogResult = DialogResult.Cancel,
+                        Location = new Point(20, 310),
+                        Size = new Size(150, 35)
+                    };
+
+                    missingForm.Controls.AddRange(new Control[] { lblMissing, listMissing, btnEdit, btnClose });
+                    missingForm.AcceptButton = btnEdit;
+                    missingForm.CancelButton = btnClose;
+
+                    if (missingForm.ShowDialog() == DialogResult.OK && listMissing.SelectedItem != null)
+                    {
+                        dynamic selectedItem = listMissing.SelectedItem;
+                        StudentDto selectedStudent = selectedItem.Student;
+
+                        foreach (DataGridViewRow row in dataGridViewStudents.Rows)
+                        {
+                            if (row.Cells["StudentIdentifier"].Value?.ToString()?.Equals(selectedStudent.StudentIdentifier, StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                dataGridViewStudents.ClearSelection();
+                                row.Selected = true;
+                                await EditSelectedStudent();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion
     }
 }
