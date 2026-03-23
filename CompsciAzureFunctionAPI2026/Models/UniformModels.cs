@@ -54,6 +54,7 @@ namespace CompsciAzureFunctionAPI2026.Models
     /// </summary>
     public class UnassignUniformRequest
     {
+        public int OrganizationId { get; set; }
         public string UniformIdentifier { get; set; } = string.Empty;
         public int RequestingUserId { get; set; }
     }

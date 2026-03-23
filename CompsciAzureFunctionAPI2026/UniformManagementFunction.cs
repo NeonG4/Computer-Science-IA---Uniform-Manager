@@ -371,6 +371,8 @@ namespace CompsciAzureFunctionAPI2026
                     });
                 }
 
+                request.UniformIdentifier = request.UniformIdentifier.Trim().ToUpperInvariant();
+
                 string? connectionString = _configuration.GetConnectionString("SqlConnection");
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
@@ -844,11 +846,17 @@ namespace CompsciAzureFunctionAPI2026
                 await using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Get the uniform's organization ID first
-                await using var getOrgCmd = new SqlCommand(
-                    "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UniformIdentifier = @Id",
-                    connection);
+                // Get the uniform's organization ID first (scoped when request org is provided)
+                var getOrgSql = request.OrganizationId > 0
+                    ? "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id AND OrganizationId = @OrgId"
+                    : "SELECT OrganizationId FROM [dbo].[Uniforms] WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id";
+
+                await using var getOrgCmd = new SqlCommand(getOrgSql, connection);
                 getOrgCmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                if (request.OrganizationId > 0)
+                {
+                    getOrgCmd.Parameters.AddWithValue("@OrgId", request.OrganizationId);
+                }
 
                 var orgResult = await getOrgCmd.ExecuteScalarAsync();
                 if (orgResult == null)
@@ -900,10 +908,12 @@ namespace CompsciAzureFunctionAPI2026
                         IsCheckedOut = 0,
                         LastModified = GETDATE(),
                         ModifiedBy = @UserId
-                    WHERE UniformIdentifier = @Id", connection);
+                    WHERE UPPER(LTRIM(RTRIM(UniformIdentifier))) = @Id
+                      AND OrganizationId = @OrgId", connection);
 
                 cmd.Parameters.AddWithValue("@UserId", request.RequestingUserId);
                 cmd.Parameters.AddWithValue("@Id", request.UniformIdentifier);
+                cmd.Parameters.AddWithValue("@OrgId", organizationId);
 
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
 
