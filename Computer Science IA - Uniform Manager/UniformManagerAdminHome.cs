@@ -101,68 +101,6 @@ namespace Computer_Science_IA___Uniform_Manager
         }
 
         /// <summary>
-        /// Checks which students are missing a selected uniform type.
-        /// </summary>
-        private void CheckMissingAssignmentsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show(
-                "Use Search and Edit Student to review assignments for now.",
-                "Check Missing Assignments",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-        }
-
-        /// <summary>
-        /// Unassigns all uniforms in the current organization.
-        /// </summary>
-        private async void UnassignAllUniformsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (_currentOrganization?.UserAccountLevel != 0)
-            {
-                MessageBox.Show("Only administrators can unassign all uniforms.", "Insufficient Permissions", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var confirmResult = MessageBox.Show(
-                $"Are you sure you want to unassign ALL uniforms in {_currentOrganization.OrganizationName}?",
-                "Confirm Unassign All",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (confirmResult != DialogResult.Yes) return;
-
-            try
-            {
-                var response = await httpClient.PostAsync(
-                    $"{API_BASE_URL}/organizations/{_currentOrganization.OrganizationId}/uniforms/unassignall?userId={_currentUser!.UserId}",
-                    new StringContent(string.Empty, Encoding.UTF8, "application/json"));
-
-                var jsonString = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<UniformResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                if (result?.Success == true)
-                {
-                    MessageBox.Show(result.Message ?? "All uniforms unassigned successfully.", "Success",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadUniformsAsync();
-                }
-                else
-                {
-                    MessageBox.Show($"Error unassigning all uniforms:\n\n{result?.Message ?? "Unknown error"}",
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error unassigning all uniforms:\n\n{ex.Message}",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        /// <summary>
         /// Loads uniforms for the current organization and configures uniform UI controls by role.
         /// </summary>
         private async Task LoadUniformsAsync()
