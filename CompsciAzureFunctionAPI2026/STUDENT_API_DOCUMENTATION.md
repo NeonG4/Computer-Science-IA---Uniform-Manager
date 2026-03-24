@@ -10,7 +10,7 @@ The Student Management API provides role-based access control for managing stude
 
 ## Base URL
 ```
-http://localhost:7071/api
+http://localhost:8001/api
 ```
 
 ## Endpoints
@@ -50,10 +50,10 @@ Retrieves all students in the system. Optionally filter by grade.
 **Examples**:
 ```bash
 # Get all students
-curl -X GET "http://localhost:7071/api/GetStudents?userId=3"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=3"
 
 # Get all 9th graders
-curl -X GET "http://localhost:7071/api/GetStudents?userId=3&grade=9"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=3&grade=9"
 ```
 
 ---
@@ -91,7 +91,7 @@ Retrieves a specific student by their identifier.
 
 **Example**:
 ```bash
-curl -X GET "http://localhost:7071/api/students/S2024001?userId=3"
+curl -X GET "http://localhost:8001/api/students/S2024001?userId=3"
 ```
 
 ---
@@ -144,7 +144,7 @@ Creates a new student in the system.
 
 **Example**:
 ```bash
-curl -X POST http://localhost:7071/api/CreateStudent \
+curl -X POST http://localhost:8001/api/CreateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024011",
@@ -191,7 +191,7 @@ Updates student information.
 **Examples**:
 ```bash
 # Update only the grade
-curl -X PUT http://localhost:7071/api/UpdateStudent \
+curl -X PUT http://localhost:8001/api/UpdateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024011",
@@ -200,7 +200,7 @@ curl -X PUT http://localhost:7071/api/UpdateStudent \
   }'
 
 # Update first and last name
-curl -X PUT http://localhost:7071/api/UpdateStudent \
+curl -X PUT http://localhost:8001/api/UpdateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024011",
@@ -235,7 +235,7 @@ Deletes a student from the system.
 
 **Example**:
 ```bash
-curl -X DELETE "http://localhost:7071/api/students/S2024011?userId=1"
+curl -X DELETE "http://localhost:8001/api/students/S2024011?userId=1"
 ```
 
 ---
@@ -310,7 +310,7 @@ curl -X DELETE "http://localhost:7071/api/students/S2024011?userId=1"
 ### Example 1: Admin Creates Students
 ```bash
 # Create multiple students
-curl -X POST http://localhost:7071/api/CreateStudent \
+curl -X POST http://localhost:8001/api/CreateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024011",
@@ -320,7 +320,7 @@ curl -X POST http://localhost:7071/api/CreateStudent \
     "requestingUserId": 1
   }'
 
-curl -X POST http://localhost:7071/api/CreateStudent \
+curl -X POST http://localhost:8001/api/CreateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024012",
@@ -334,16 +334,16 @@ curl -X POST http://localhost:7071/api/CreateStudent \
 ### Example 2: User Views Students
 ```bash
 # View all students
-curl -X GET "http://localhost:7071/api/GetStudents?userId=5"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=5"
 
 # View specific student
-curl -X GET "http://localhost:7071/api/students/S2024011?userId=5"
+curl -X GET "http://localhost:8001/api/students/S2024011?userId=5"
 ```
 
 ### Example 3: Admin Updates Student
 ```bash
 # Student promoted to next grade
-curl -X PUT http://localhost:7071/api/UpdateStudent \
+curl -X PUT http://localhost:8001/api/UpdateStudent \
   -H "Content-Type: application/json" \
   -d '{
     "studentIdentifier": "S2024011",
@@ -355,10 +355,10 @@ curl -X PUT http://localhost:7071/api/UpdateStudent \
 ### Example 4: Get Students by Grade
 ```bash
 # Get all 9th graders
-curl -X GET "http://localhost:7071/api/GetStudents?userId=3&grade=9"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=3&grade=9"
 
 # Get all 12th graders
-curl -X GET "http://localhost:7071/api/GetStudents?userId=3&grade=12"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=3&grade=12"
 ```
 
 ---
@@ -400,10 +400,10 @@ The Student Management API is designed to work seamlessly with the Uniform Manag
 ### Linking Students to Uniforms
 ```bash
 # 1. Get a student
-curl -X GET "http://localhost:7071/api/students/S2024001?userId=5"
+curl -X GET "http://localhost:8001/api/students/S2024001?userId=5"
 
 # 2. Check out a uniform to that student
-curl -X POST http://localhost:7071/api/uniforms/checkout \
+curl -X POST http://localhost:8001/api/uniforms/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-001",
@@ -416,7 +416,7 @@ curl -X POST http://localhost:7071/api/uniforms/checkout \
 ### Reporting by Grade
 ```bash
 # Get all 9th graders
-curl -X GET "http://localhost:7071/api/GetStudents?userId=3&grade=9"
+curl -X GET "http://localhost:8001/api/GetStudents?userId=3&grade=9"
 
 # Then check which uniforms are assigned to each student using the uniform API
 ```

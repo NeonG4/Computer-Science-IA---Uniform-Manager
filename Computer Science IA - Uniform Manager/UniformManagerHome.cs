@@ -17,10 +17,10 @@ using Computer_Science_IA___Uniform_Manager.Models;
 
 namespace Computer_Science_IA___Uniform_Manager
 {
-    public partial class UniformManagerAdminHome : Form
+    public partial class UniformManagerHome : Form
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
+        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:8001/api";
         private UserInfo? _currentUser;
         private OrganizationDto? _currentOrganization;
         private List<OrganizationUserDto>? _organizationUsers; // Store full user data for the organization
@@ -30,7 +30,7 @@ namespace Computer_Science_IA___Uniform_Manager
         /// <summary>
         /// Initializes a new instance of the admin home form.
         /// </summary>
-        public UniformManagerAdminHome()
+        public UniformManagerHome()
         {
             InitializeComponent();
         }
@@ -38,7 +38,7 @@ namespace Computer_Science_IA___Uniform_Manager
         /// <summary>
         /// Initializes a new instance of the admin home form with the signed-in user and selected organization.
         /// </summary>
-        public UniformManagerAdminHome(UserInfo user, OrganizationDto organization) : this()
+        public UniformManagerHome(UserInfo user, OrganizationDto organization) : this()
         {
             _currentUser = user;
             _currentOrganization = organization;
@@ -47,7 +47,7 @@ namespace Computer_Science_IA___Uniform_Manager
         /// <summary>
         /// Handles form load by validating context, updating the title, and loading initial data.
         /// </summary>
-        private async void UniformManagerAdminHome_Load(object sender, EventArgs e)
+        private async void UniformManagerHome_Load(object sender, EventArgs e)
         {
             // If no user or organization is set, this shouldn't happen 
             if (_currentUser == null || _currentOrganization == null)
@@ -2475,7 +2475,7 @@ namespace Computer_Science_IA___Uniform_Manager
                     return false;
                 }
 
-                if (type == 2)
+                if (type == 2) // Hat
                 {
                     sizeQuery = cmbSize1.Text.Trim();
                 }

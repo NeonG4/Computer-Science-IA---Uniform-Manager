@@ -9,7 +9,7 @@ The Uniform Management API provides role-based access control for managing band/
 
 ## Base URL
 ```
-http://localhost:7071/api
+http://localhost:8001/api
 ```
 
 ## Endpoints
@@ -383,7 +383,7 @@ Updates the condition status of a uniform.
 
 ### Example 1: Admin Creates a Uniform
 ```bash
-curl -X POST http://localhost:7071/api/CreateUniform \
+curl -X POST http://localhost:8001/api/CreateUniform \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-050",
@@ -395,7 +395,7 @@ curl -X POST http://localhost:7071/api/CreateUniform \
 
 ### Example 2: User Checks Out Uniform
 ```bash
-curl -X POST http://localhost:7071/api/uniforms/checkout \
+curl -X POST http://localhost:8001/api/uniforms/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-050",
@@ -407,7 +407,7 @@ curl -X POST http://localhost:7071/api/uniforms/checkout \
 
 ### Example 3: User Reports Damage
 ```bash
-curl -X PUT http://localhost:7071/api/uniforms/conditions \
+curl -X PUT http://localhost:8001/api/uniforms/conditions \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-050",
@@ -418,7 +418,7 @@ curl -X PUT http://localhost:7071/api/uniforms/conditions \
 
 ### Example 4: User Checks In Uniform
 ```bash
-curl -X POST http://localhost:7071/api/uniforms/checkout \
+curl -X POST http://localhost:8001/api/uniforms/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-050",
@@ -430,7 +430,7 @@ curl -X POST http://localhost:7071/api/uniforms/checkout \
 
 ### Example 5: Admin Updates Uniform Size
 ```bash
-curl -X PUT http://localhost:7071/api/UpdateUniform \
+curl -X PUT http://localhost:8001/api/UpdateUniform \
   -H "Content-Type: application/json" \
   -d '{
     "uniformIdentifier": "MC-050",
@@ -441,7 +441,7 @@ curl -X PUT http://localhost:7071/api/UpdateUniform \
 
 ### Example 6: Get All Uniforms
 ```bash
-curl -X GET "http://localhost:7071/api/GetUniforms?userId=3"
+curl -X GET "http://localhost:8001/api/GetUniforms?userId=3"
 ```
 
 ---

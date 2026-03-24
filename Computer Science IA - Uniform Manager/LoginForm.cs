@@ -13,7 +13,7 @@ namespace Computer_Science_IA___Uniform_Manager
     public partial class LoginForm : Form
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
+        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:8001/api";
         private HashAlgorithm sha256 = SHA256.Create();
 
         public LoginForm()
@@ -73,7 +73,7 @@ namespace Computer_Science_IA___Uniform_Manager
                         if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
                         {
                             // Open main form with selected organization
-                            UniformManagerAdminHome home = new UniformManagerAdminHome(
+                            UniformManagerHome home = new UniformManagerHome(
                                 result.User,
                                 orgSelector.SelectedOrganization);
                             home.ShowDialog();
@@ -240,7 +240,7 @@ namespace Computer_Science_IA___Uniform_Manager
                         if (dialogResult == DialogResult.OK && orgSelector.SelectedOrganization != null)
                         {
                             // Open main form with selected organization
-                            UniformManagerAdminHome home = new UniformManagerAdminHome(
+                            UniformManagerHome home = new UniformManagerHome(
                                 result.User,
                                 orgSelector.SelectedOrganization);
                             home.ShowDialog();

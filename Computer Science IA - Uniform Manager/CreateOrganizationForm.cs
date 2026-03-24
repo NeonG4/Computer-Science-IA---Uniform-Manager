@@ -12,7 +12,7 @@ namespace Computer_Science_IA___Uniform_Manager
     public partial class CreateOrganizationForm : Form
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:7109/api";
+        private static readonly string API_BASE_URL = ConfigurationManager.AppSettings["ApiBaseUrl"] ?? "http://localhost:8001/api";
         private readonly UserInfo _currentUser;
 
         public CreateOrganizationForm(UserInfo user)

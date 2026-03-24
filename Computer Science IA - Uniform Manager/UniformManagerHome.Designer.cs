@@ -1,6 +1,6 @@
 ﻿namespace Computer_Science_IA___Uniform_Manager
 {
-    partial class UniformManagerAdminHome
+    partial class UniformManagerHome
     {
         /// <summary>
         /// Required designer variable.
@@ -767,7 +767,7 @@
             toolStripMenuItem2.Name = "toolStripMenuItem2";
             toolStripMenuItem2.Size = new Size(262, 6);
             // 
-            // UniformManagerAdminHome
+            // UniformManagerHome
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -776,9 +776,9 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Margin = new Padding(2, 3, 2, 3);
-            Name = "UniformManagerAdminHome";
+            Name = "UniformManagerHome";
             Text = "Uniform Manager";
-            Load += UniformManagerAdminHome_Load;
+            Load += UniformManagerHome_Load;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             tableLayoutPanel1.ResumeLayout(false);
